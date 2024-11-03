@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Determination and Management System</title>
+<style>
+    /* General Styling */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+.container, .calculator-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+}
+
+.form-group, .form-row {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #f9f9fb;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: #007BFF;
+    outline: none;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #007BFF;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.order-table, table {
+    width: 100%;
+    margin-top: 25px;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.order-table th, .order-table td, th, td {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 12px 15px;
+    text-align: center;
+    color: #333;
+}
+
+.order-table th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: #444;
+}
+
+.toggle-btn {
+    display: block;
+    margin: 15px auto;
+    background-color: #10b981;
+    padding: 10px 24px;
+    font-weight: 600;
+}
+
+.toggle-btn:hover {
+    background-color: #059669;
+}
+
+.hidden {
+    display: none;
+}
+
+.tab {
+    display: inline-block;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-weight: 500;
+    color: #555;
+    transition: color 0.3s, border-color 0.3s;
+}
+
+.tab.active {
+    border-bottom: 2px solid #007BFF;
+    color: #007BFF;
+}
+
+.tab-content {
+    display: none;
+    margin-top: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+</style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <h2>Supplier Determination Calculator</h2>
+    <div class="form-group">
+        <label for="serviceType">Select Service Type:</label>
+        <select id="serviceType">
+            <option value="">Select a service</option>
+            <option value="bankTransferSaver">Bank Transfer (Saver)</option>
+            <option value="bankTransferExpress">Bank Transfer (Express)</option>
+            <option value="bankTransferUSD">Bank Transfer (USD)</option>
+            <option value="enterpriseToEnterprise">Enterprise to Enterprise</option>
+            <option value="alipay">Alipay</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="orderAmount">Enter Order Amount (must be > 0.01):</label>
+        <input type="number" id="orderAmount" min="0.01" step="0.01" placeholder="Enter amount">
+    </div>
+    <div id="additionalQuestions"></div>
+    <button class="btn" id="createOrderBtn">Create Order</button>
+    <button class="btn" id="calculateBestSupplierBtn">Calculate the Best Supplier</button>
+
+    <table class="order-table" id="orderTable">
+        <thead>
+            <tr>
+                <th>Service Type</th>
+                <th>Order Amount</th>
+                <th>Additional Info</th>
+                <th>Best Supplier</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Orders will be populated here -->
+        </tbody>
+    </table>
+</div>
+
+<button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
+
+<div class="container hidden" id="supplierManagementSection">
+    <h2>Supplier Management</h2>
+
+    <h3>Daily Rate</h3>
+    <div id="daily-rate-section"></div>
+
+    <h3>Add/Edit Supplier</h3>
+    <div class="form-row">
+        <label for="supplier-name">Supplier Name</label>
+        <input type="text" id="supplier-name" placeholder="Enter supplier name">
+    </div>
+    <div class="form-row">
+        <label for="service-type">Service Type</label>
+        <select id="service-type">
+            <option value="bank-express">Bank Transfer (Express)</option>
+            <option value="bank-saver">Bank Transfer (Saver)</option>
+            <option value="enterprise">Enterprise to Enterprise</option>
+            <option value="usd-transfer">Bank Transfer (USD)</option>
+            <option value="alipay">Alipay Transfer</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label>Amount Limits</label>
+        <div id="amount-limits-section"></div>
+    </div>
+    <button class="btn" id="add-amount-range-btn">Add Amount Range</button>
+
+    <div class="form-row">
+        <label>Service Charges</label>
+        <div id="service-charge-section"></div>
+    </div>
+    <button class="btn" id="add-service-charge-btn">Add Service Charge</button>
+
+    <h3>Additional Questions</h3>
+    <div id="additional-questions-container"></div>
+
+    <button class="btn" id="add-supplier-btn">Add Supplier</button>
+
+    <h3>Supplier Information</h3>
+    <div class="tabs" id="service-tabs">
+        <div class="tab" data-service="bank-express">Bank Transfer (Express)</div>
+        <div class="tab" data-service="bank-saver">Bank Transfer (Saver)</div>
+        <div class="tab" data-service="enterprise">Enterprise to Enterprise</div>
+        <div class="tab" data-service="usd-transfer">Bank Transfer (USD)</div>
+        <div class="tab" data-service="alipay">Alipay Transfer</div>
+    </div>
+
+    <div id="tab-content-container">
+        <div class="tab-content" id="bank-express-tab">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount Limits</th>
+                        <th>Service Charges</th>
+                        <th>Additional Questions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bank-express-table-body"></tbody>
+            </table>
+        </div>
+        <div class="tab-content" id="bank-saver-tab">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount Limits</th>
+                        <th>Service Charges</th>
+                        <th>Additional Questions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bank-saver-table-body"></tbody>
+            </table>
+        </div>
+        <div class="tab-content" id="enterprise-tab">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount Limits</th>
+                        <th>Service Charges</th>
+                        <th>Additional Questions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="enterprise-table-body"></tbody>
+            </table>
+        </div>
+        <div class="tab-content" id="usd-transfer-tab">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount Limits</th>
+                        <th>Service Charges</th>
+                        <th>Additional Questions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usd-transfer-table-body"></tbody>
+            </table>
+        </div>
+        <div class="tab-content" id="alipay-tab">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount Limits</th>
+                        <th>Service Charges</th>
+                        <th>Additional Questions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="alipay-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('serviceType').addEventListener('change', function () {
+        const additionalQuestionsContainer = document.getElementById('additionalQuestions');
+        additionalQuestionsContainer.innerHTML = '';
+
+        const selectedService = this.value;
+
+        if (selectedService === 'bankTransferSaver' || selectedService === 'bankTransferExpress') {
+            additionalQuestionsContainer.innerHTML = `
+                <div class="form-group">
+                    <label for="englishAccount">English Account:</label>
+                    <select id="englishAccount">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="gsyhAccount">工商银行 Account:</label>
+                    <select id="gsyhAccount">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            `;
+        } else if (selectedService === 'bankTransferUSD') {
+            additionalQuestionsContainer.innerHTML = `
+                <div class="form-group">
+                    <label for="accountType">Account Type:</label>
+                    <select id="accountType">
+                        <option value="personal">Personal</option>
+                        <option value="company">Company</option>
+                    </select>
+                </div>
+            `;
+        } else if (selectedService === 'alipay') {
+            additionalQuestionsContainer.innerHTML = `
+                <div class="form-group">
+                    <label for="englishAccount">English Account:</label>
+                    <select id="englishAccount">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            `;
+        }
+    });
+
+    document.getElementById('createOrderBtn').addEventListener('click', function () {
+        const serviceType = document.getElementById('serviceType').value;
+        const orderAmount = document.getElementById('orderAmount').value;
+        const orderTable = document.getElementById('orderTable').querySelector('tbody');
+
+        if (!serviceType || orderAmount <= 0.01) {
+            alert('Please select a valid service type and enter a valid order amount.');
+            return;
+        }
+
+        let additionalInfo = '';
+        if (serviceType === 'bankTransferSaver' || serviceType === 'bankTransferExpress') {
+            additionalInfo = `English Account: ${document.getElementById('englishAccount').value}, 工商银行 Account: ${document.getElementById('gsyhAccount').value}`;
+        } else if (serviceType === 'bankTransferUSD') {
+            additionalInfo = `Account Type: ${document.getElementById('accountType').value}`;
+        } else if (serviceType === 'alipay') {
+            additionalInfo = `English Account: ${document.getElementById('englishAccount').value}`;
+        } else {
+            additionalInfo = 'N/A';
+        }
+
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${serviceType.replace(/([A-Z])/g, ' $1').trim()}</td>
+            <td>${orderAmount}</td>
+            <td>${additionalInfo}</td>
+            <td class="best-supplier">Calculating...</td>
+        `;
+        orderTable.appendChild(newRow);
+    });
+
+    document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
+    const rows = document.querySelectorAll('#orderTable tbody tr');
+
+    if (rows.length === 0) {
+        alert('No orders to process.');
+        return;
+    }
+
+    rows.forEach(row => {
+        const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
+        const orderAmount = parseFloat(row.cells[1].textContent.trim());
+        const additionalInfoCell = row.cells[2].textContent.trim();
+        let bestSupplier = null;
+        let lowestTotalCost = Infinity;
+
+        // Parse additional info into an object for easier matching
+        const additionalInfo = {};
+        additionalInfoCell.split(',').forEach(info => {
+            const [key, value] = info.split(':').map(s => s.trim());
+            additionalInfo[key.toLowerCase()] = value.toLowerCase();
+        });
+
+        suppliers.forEach(supplier => {
+            // Convert service type to match the format in the table
+            const formattedServiceType = supplier.serviceType.replace(/-/g, ' ').toLowerCase();
+            
+            // Map service types to match
+            const serviceTypeMap = {
+                'bank transfer saver': 'bank saver',
+                'bank transfer express': 'bank express',
+                'bank transfer usd': 'usd transfer',
+                'enterprise to enterprise': 'enterprise',
+                'alipay': 'alipay'
+            };
+
+            if (serviceTypeMap[serviceTypeCell] === formattedServiceType) {
+                console.log(`Checking supplier: ${supplier.name} for service: ${formattedServiceType}`);
+
+                // Check amount limits
+                let isAmountValid = supplier.amountLimits.some(limit => {
+                    try {
+                        if (limit.includes('-')) {
+                            const [min, max] = limit.split('-').map(num => parseFloat(num.trim()));
+                            return orderAmount >= min && orderAmount <= max;
+                        } else if (limit.startsWith('>')) {
+                            const min = parseFloat(limit.slice(1).trim());
+                            return orderAmount > min;
+                        } else if (limit.startsWith('<')) {
+                            const max = parseFloat(limit.slice(1).trim());
+                            return orderAmount < max;
+                        }
+                    } catch (e) {
+                        console.error(`Error parsing limit: ${limit}`, e);
+                        return false;
+                    }
+                    return false;
+                });
+
+                // Check if supplier matches additional requirements
+                let matchesRequirements = true;
+                supplier.additionalQuestions.forEach(question => {
+                    const questionLabel = question.label.toLowerCase();
+                    const questionValue = question.value.toLowerCase();
+                    
+                    // Match the question label with the additional info keys
+                    if (questionLabel.includes('english account') && 
+                        additionalInfo['english account'] !== questionValue) {
+                        matchesRequirements = false;
+                    }
+                    if (questionLabel.includes('工商银行') && 
+                        additionalInfo['工商银行 account'] !== questionValue) {
+                        matchesRequirements = false;
+                    }
+                    if (questionLabel.includes('account type') && 
+                        additionalInfo['account type'] !== questionValue) {
+                        matchesRequirements = false;
+                    }
+                });
+
+                console.log(`Amount valid: ${isAmountValid}, Matches requirements: ${matchesRequirements}`);
+
+                if (isAmountValid && matchesRequirements) {
+                    const dailyRateInput = document.querySelector(`input[data-supplier="${supplier.name}"]`);
+                    if (dailyRateInput && dailyRateInput.value) {
+                        const dailyRate = parseFloat(dailyRateInput.value);
+                        let convertedOrderAmount = 0;
+
+                        // Convert amount based on service type
+                        if (formattedServiceType === 'usd transfer') {
+                            convertedOrderAmount = orderAmount * dailyRate; // USD to MYR
+                        } else {
+                            convertedOrderAmount = orderAmount / dailyRate; // CNY to MYR
+                        }
+
+                        let totalCost = convertedOrderAmount;
+
+                        // Apply service charges
+                        supplier.serviceCharges.forEach(charge => {
+                            if (evaluateCondition(charge.condition, orderAmount)) {
+                                const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
+                                totalCost += chargeAmount;
+                                console.log(`Applied charge: ${chargeAmount} for condition: ${charge.condition}`);
+                            }
+                        });
+
+                        console.log(`Supplier ${supplier.name} total cost: ${totalCost}`);
+
+                        if (totalCost < lowestTotalCost) {
+                            lowestTotalCost = totalCost;
+                            bestSupplier = supplier.name;
+                        }
+                    } else {
+                        console.log(`No daily rate found for supplier: ${supplier.name}`);
+                    }
+                }
+            }
+        });
+
+        const bestSupplierCell = row.querySelector('.best-supplier');
+        bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
+    });
+
+    alert('Best supplier calculation completed.');
+});
+
+// Helper function to evaluate conditions
+function evaluateCondition(condition, amount) {
+    try {
+        if (!condition) return false;
+        condition = condition.toLowerCase();
+        
+        // Handle basic numerical conditions
+        if (condition.includes('>')) {
+            const value = parseFloat(condition.split('>')[1]);
+            return amount > value;
+        } else if (condition.includes('<')) {
+            const value = parseFloat(condition.split('<')[1]);
+            return amount < value;
+        } else if (condition.includes('-')) {
+            const [min, max] = condition.split('-').map(parseFloat);
+            return amount >= min && amount <= max;
+        }
+        
+        // Handle complex conditions
+        if (condition.includes('company account')) {
+            // Add specific company account logic here
+            return true;
+        }
+        
+        return true; // Default to true for unrecognized conditions
+    } catch (e) {
+        console.error(`Error evaluating condition: ${condition}`, e);
+        return false;
+    }
+}
+
+    document.getElementById('toggleManagementBtn').addEventListener('click', function () {
+        const section = document.getElementById('supplierManagementSection');
+        section.classList.toggle('hidden');
+        this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
+    });
+
+    let suppliers = [];
+    let editingSupplierIndex = -1;
+
+    document.getElementById('add-amount-range-btn').addEventListener('click', () => {
+        const amountRangeItem = document.createElement('div');
+        amountRangeItem.classList.add('amount-range-item');
+        amountRangeItem.innerHTML = `
+            <input type="text" class="amount-range" placeholder="e.g. '> 0.01' or '10000 - 20000'" />
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+        `;
+        document.getElementById('amount-limits-section').appendChild(amountRangeItem);
+    });
+
+    document.getElementById('add-service-charge-btn').addEventListener('click', () => {
+        const serviceChargeItem = document.createElement('div');
+        serviceChargeItem.classList.add('service-charge-item');
+        serviceChargeItem.innerHTML = `
+            <div>
+                <label>Condition</label>
+                <input type="text" class="service-condition" placeholder="e.g. 'Company Account > 2000 USD'" />
+            </div>
+            <div>
+                <label>Charge</label>
+                <input type="text" class="service-charge" placeholder="e.g. 'CNY 50'" />
+            </div>
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+        `;
+        document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+    });
+
+    document.getElementById('service-type').addEventListener('change', handleServiceTypeChange);
+
+    function handleServiceTypeChange() {
+        const selectedService = document.getElementById('service-type').value;
+        const additionalQuestionsContainer = document.getElementById('additional-questions-container');
+        additionalQuestionsContainer.innerHTML = ''; // Clear existing questions
+
+        if (selectedService === 'bank-express' || selectedService === 'bank-saver') {
+            additionalQuestionsContainer.innerHTML = `
+                <div class="form-row">
+                    <label>English Account</label>
+                    <select>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label>工商银行 Account</label>
+                    <select>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            `;
+        } else if (selectedService === 'usd-transfer') {
+            additionalQuestionsContainer.innerHTML = `
+                <div class="form-row">
+                    <label>Account Type</label>
+                    <select>
+                        <option value="personal">Personal</option>
+                        <option value="company">Company</option>
+                    </select>
+                </div>
+            `;
+        } else if (selectedService === 'alipay') {
+            additionalQuestionsContainer.innerHTML = `
+                <div class="form-row">
+                    <label>English Account</label>
+                    <select>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                    </select>
+                </div>
+            `;
+        }
+    }
+
+    document.getElementById('add-supplier-btn').addEventListener('click', () => {
+        const name = document.getElementById('supplier-name').value;
+        const serviceType = document.getElementById('service-type').value;
+        const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
+        const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
+            return {
+                condition: item.querySelector('.service-condition').value,
+                charge: item.querySelector('.service-charge').value
+            };
+        });
+        const additionalQuestions = Array.from(document.querySelectorAll('#additional-questions-container .form-row')).map(row => {
+            const label = row.querySelector('label').textContent;
+            const value = row.querySelector('select').value;
+            return { label, value };
+        });
+
+        if (name && serviceType && amountLimits.length > 0) {
+            const supplierData = {
+                name,
+                serviceType,
+                amountLimits,
+                serviceCharges,
+                additionalQuestions
+            };
+
+            if (editingSupplierIndex === -1) {
+                suppliers.push(supplierData);
+            } else {
+                suppliers[editingSupplierIndex] = supplierData;
+                editingSupplierIndex = -1;
+                document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
+            }
+
+            updateSupplierTables();
+            updateDailyRateSection(); // Update the daily rate section
+            clearSupplierForm();
+        }
+    });
+
+    function updateDailyRateSection() {
+        const dailyRateSection = document.getElementById('daily-rate-section');
+        dailyRateSection.innerHTML = ''; // Clear existing content
+
+        // Group suppliers by their service type
+        const suppliersByService = suppliers.reduce((acc, supplier) => {
+            if (!acc[supplier.serviceType]) {
+                acc[supplier.serviceType] = [];
+            }
+            acc[supplier.serviceType].push(supplier);
+            return acc;
+        }, {});
+
+        // Create the daily rate section dynamically
+        for (const [serviceType, suppliersList] of Object.entries(suppliersByService)) {
+            const serviceHeader = document.createElement('h4');
+            serviceHeader.textContent = `Service: ${serviceType.replace(/-/g, ' ')}`;
+            dailyRateSection.appendChild(serviceHeader);
+
+            suppliersList.forEach(supplier => {
+                const supplierRateRow = document.createElement('div');
+                supplierRateRow.classList.add('form-row');
+                supplierRateRow.innerHTML = `
+                    <label>${supplier.name}:</label>
+                    <input type="number" placeholder="Enter daily rate" data-supplier="${supplier.name}">
+                `;
+                dailyRateSection.appendChild(supplierRateRow);
+            });
+        }
+    }
+
+    function updateSupplierTables() {
+        const tables = {
+            'bank-express': document.getElementById('bank-express-table-body'),
+            'bank-saver': document.getElementById('bank-saver-table-body'),
+            'enterprise': document.getElementById('enterprise-table-body'),
+            'usd-transfer': document.getElementById('usd-transfer-table-body'),
+            'alipay': document.getElementById('alipay-table-body')
+        };
+
+        Object.values(tables).forEach(table => table.innerHTML = ''); // Clear all tables
+
+        suppliers.forEach((supplier, index) => {
+            const row = `
+                <tr>
+                    <td>${supplier.name}</td>
+                    <td>${supplier.amountLimits.join(', ')}</td>
+                    <td>${supplier.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+                    <td>${supplier.additionalQuestions.map(q => `${q.label}: ${q.value}`).join(', ')}</td>
+                    <td>
+                        <button onclick="editSupplier(${index})">Edit</button>
+                        <button onclick="deleteSupplier(${index})">Delete</button>
+                    </td>
+                </tr>
+            `;
+
+            if (tables[supplier.serviceType]) {
+                tables[supplier.serviceType].innerHTML += row;
+            }
+        });
+    }
+
+    function editSupplier(index) {
+        const supplier = suppliers[index];
+        document.getElementById('supplier-name').value = supplier.name;
+        document.getElementById('service-type').value = supplier.serviceType;
+
+        document.getElementById('amount-limits-section').innerHTML = ''; // Clear existing amount ranges
+        supplier.amountLimits.forEach(range => {
+            const amountRangeItem = document.createElement('div');
+            amountRangeItem.classList.add('amount-range-item');
+            amountRangeItem.innerHTML = `
+                <input type="text" class="amount-range" value="${range}" />
+                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+            `;
+            document.getElementById('amount-limits-section').appendChild(amountRangeItem);
+        });
+
+        document.getElementById('service-charge-section').innerHTML = ''; // Clear existing service charges
+        supplier.serviceCharges.forEach(charge => {
+            const serviceChargeItem = document.createElement('div');
+            serviceChargeItem.classList.add('service-charge-item');
+            serviceChargeItem.innerHTML = `
+                <div>
+                    <label>Condition</label>
+                    <input type="text" class="service-condition" value="${charge.condition}" />
+                </div>
+                <div>
+                    <label>Charge</label>
+                    <input type="text" class="service-charge" value="${charge.charge}" />
+                </div>
+                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+            `;
+            document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+        });
+
+        document.getElementById('additional-questions-container').innerHTML = ''; // Clear existing additional questions
+        supplier.additionalQuestions.forEach(question => {
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('form-row');
+            questionDiv.innerHTML = `
+                <label>${question.label}</label>
+                <select>
+                    <option value="yes" ${question.value === 'yes' ? 'selected' : ''}>Yes</option>
+                    <option value="no" ${question.value === 'no' ? 'selected' : ''}>No</option>
+                </select>
+            `;
+            document.getElementById('additional-questions-container').appendChild(questionDiv);
+        });
+
+        editingSupplierIndex = index;
+        document.getElementById('add-supplier-btn').textContent = 'Update Supplier';
+    }
+
+    function deleteSupplier(index) {
+        suppliers.splice(index, 1);
+        updateSupplierTables();
+        updateDailyRateSection(); // Reflect changes in the daily rate section
+    }
+
+    function removeItem(button) {
+        const item = button.parentNode;
+        item.parentNode.removeChild(item);
+    }
+
+    function clearSupplierForm() {
+        document.getElementById('supplier-name').value = '';
+        document.getElementById('service-type').value = '';
+        document.getElementById('amount-limits-section').innerHTML = '';
+        document.getElementById('service-charge-section').innerHTML = '';
+        document.getElementById('additional-questions-container').innerHTML = '';
+        document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
+        editingSupplierIndex = -1;
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+            this.classList.add('active');
+            document.getElementById(`${this.dataset.service}-tab`).classList.add('active');
+        });
+    });
+
+    document.querySelector('.tab').click(); // Activate the first tab by default
+
+    // Initial call to populate the Daily Rate section on page load
+    updateDailyRateSection();
+</script>
