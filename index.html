@@ -289,6 +289,16 @@ input:focus, select:focus {
 </div>
 
 <script>
+    // Load suppliers from localStorage on page load
+    window.addEventListener('load', function() {
+        const storedSuppliers = localStorage.getItem('suppliers');
+        if (storedSuppliers) {
+            suppliers = JSON.parse(storedSuppliers);
+            updateSupplierTables();
+            updateDailyRateSection();
+        }
+    });
+
     document.getElementById('serviceType').addEventListener('change', function () {
         const additionalQuestionsContainer = document.getElementById('additionalQuestions');
         additionalQuestionsContainer.innerHTML = '';
@@ -367,160 +377,138 @@ input:focus, select:focus {
     });
 
     document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
-    const rows = document.querySelectorAll('#orderTable tbody tr');
+        const rows = document.querySelectorAll('#orderTable tbody tr');
 
-    if (rows.length === 0) {
-        alert('No orders to process.');
-        return;
-    }
+        if (rows.length === 0) {
+            alert('No orders to process.');
+            return;
+        }
 
-    rows.forEach(row => {
-        const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
-        const orderAmount = parseFloat(row.cells[1].textContent.trim());
-        const additionalInfoCell = row.cells[2].textContent.trim();
-        let bestSupplier = null;
-        let lowestTotalCost = Infinity;
+        rows.forEach(row => {
+            const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
+            const orderAmount = parseFloat(row.cells[1].textContent.trim());
+            const additionalInfoCell = row.cells[2].textContent.trim();
+            let bestSupplier = null;
+            let lowestTotalCost = Infinity;
 
-        // Parse additional info into an object for easier matching
-        const additionalInfo = {};
-        additionalInfoCell.split(',').forEach(info => {
-            const [key, value] = info.split(':').map(s => s.trim());
-            additionalInfo[key.toLowerCase()] = value.toLowerCase();
-        });
+            const additionalInfo = {};
+            additionalInfoCell.split(',').forEach(info => {
+                const [key, value] = info.split(':').map(s => s.trim());
+                additionalInfo[key.toLowerCase()] = value.toLowerCase();
+            });
 
-        suppliers.forEach(supplier => {
-            // Convert service type to match the format in the table
-            const formattedServiceType = supplier.serviceType.replace(/-/g, ' ').toLowerCase();
-            
-            // Map service types to match
-            const serviceTypeMap = {
-                'bank transfer saver': 'bank saver',
-                'bank transfer express': 'bank express',
-                'bank transfer usd': 'usd transfer',
-                'enterprise to enterprise': 'enterprise',
-                'alipay': 'alipay'
-            };
+            suppliers.forEach(supplier => {
+                const formattedServiceType = supplier.serviceType.replace(/-/g, ' ').toLowerCase();
+                const serviceTypeMap = {
+                    'bank transfer saver': 'bank saver',
+                    'bank transfer express': 'bank express',
+                    'bank transfer usd': 'usd transfer',
+                    'enterprise to enterprise': 'enterprise',
+                    'alipay': 'alipay'
+                };
 
-            if (serviceTypeMap[serviceTypeCell] === formattedServiceType) {
-                console.log(`Checking supplier: ${supplier.name} for service: ${formattedServiceType}`);
-
-                // Check amount limits
-                let isAmountValid = supplier.amountLimits.some(limit => {
-                    try {
-                        if (limit.includes('-')) {
-                            const [min, max] = limit.split('-').map(num => parseFloat(num.trim()));
-                            return orderAmount >= min && orderAmount <= max;
-                        } else if (limit.startsWith('>')) {
-                            const min = parseFloat(limit.slice(1).trim());
-                            return orderAmount > min;
-                        } else if (limit.startsWith('<')) {
-                            const max = parseFloat(limit.slice(1).trim());
-                            return orderAmount < max;
-                        }
-                    } catch (e) {
-                        console.error(`Error parsing limit: ${limit}`, e);
-                        return false;
-                    }
-                    return false;
-                });
-
-                // Check if supplier matches additional requirements
-                let matchesRequirements = true;
-                supplier.additionalQuestions.forEach(question => {
-                    const questionLabel = question.label.toLowerCase();
-                    const questionValue = question.value.toLowerCase();
-                    
-                    // Match the question label with the additional info keys
-                    if (questionLabel.includes('english account') && 
-                        additionalInfo['english account'] !== questionValue) {
-                        matchesRequirements = false;
-                    }
-                    if (questionLabel.includes('工商银行') && 
-                        additionalInfo['工商银行 account'] !== questionValue) {
-                        matchesRequirements = false;
-                    }
-                    if (questionLabel.includes('account type') && 
-                        additionalInfo['account type'] !== questionValue) {
-                        matchesRequirements = false;
-                    }
-                });
-
-                console.log(`Amount valid: ${isAmountValid}, Matches requirements: ${matchesRequirements}`);
-
-                if (isAmountValid && matchesRequirements) {
-                    const dailyRateInput = document.querySelector(`input[data-supplier="${supplier.name}"]`);
-                    if (dailyRateInput && dailyRateInput.value) {
-                        const dailyRate = parseFloat(dailyRateInput.value);
-                        let convertedOrderAmount = 0;
-
-                        // Convert amount based on service type
-                        if (formattedServiceType === 'usd transfer') {
-                            convertedOrderAmount = orderAmount * dailyRate; // USD to MYR
-                        } else {
-                            convertedOrderAmount = orderAmount / dailyRate; // CNY to MYR
-                        }
-
-                        let totalCost = convertedOrderAmount;
-
-                        // Apply service charges
-                        supplier.serviceCharges.forEach(charge => {
-                            if (evaluateCondition(charge.condition, orderAmount)) {
-                                const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
-                                totalCost += chargeAmount;
-                                console.log(`Applied charge: ${chargeAmount} for condition: ${charge.condition}`);
+                if (serviceTypeMap[serviceTypeCell] === formattedServiceType) {
+                    let isAmountValid = supplier.amountLimits.some(limit => {
+                        try {
+                            if (limit.includes('-')) {
+                                const [min, max] = limit.split('-').map(num => parseFloat(num.trim()));
+                                return orderAmount >= min && orderAmount <= max;
+                            } else if (limit.startsWith('>')) {
+                                const min = parseFloat(limit.slice(1).trim());
+                                return orderAmount > min;
+                            } else if (limit.startsWith('<')) {
+                                const max = parseFloat(limit.slice(1).trim());
+                                return orderAmount < max;
                             }
-                        });
-
-                        console.log(`Supplier ${supplier.name} total cost: ${totalCost}`);
-
-                        if (totalCost < lowestTotalCost) {
-                            lowestTotalCost = totalCost;
-                            bestSupplier = supplier.name;
+                        } catch (e) {
+                            console.error(`Error parsing limit: ${limit}`, e);
+                            return false;
                         }
-                    } else {
-                        console.log(`No daily rate found for supplier: ${supplier.name}`);
+                        return false;
+                    });
+
+                    let matchesRequirements = true;
+                    supplier.additionalQuestions.forEach(question => {
+                        const questionLabel = question.label.toLowerCase();
+                        const questionValue = question.value.toLowerCase();
+
+                        if (questionLabel.includes('english account') && 
+                            additionalInfo['english account'] !== questionValue) {
+                            matchesRequirements = false;
+                        }
+                        if (questionLabel.includes('工商银行') && 
+                            additionalInfo['工商银行 account'] !== questionValue) {
+                            matchesRequirements = false;
+                        }
+                        if (questionLabel.includes('account type') && 
+                            additionalInfo['account type'] !== questionValue) {
+                            matchesRequirements = false;
+                        }
+                    });
+
+                    if (isAmountValid && matchesRequirements) {
+                        const dailyRateInput = document.querySelector(`input[data-supplier="${supplier.name}"]`);
+                        if (dailyRateInput && dailyRateInput.value) {
+                            const dailyRate = parseFloat(dailyRateInput.value);
+                            let convertedOrderAmount = 0;
+
+                            if (formattedServiceType === 'usd transfer') {
+                                convertedOrderAmount = orderAmount * dailyRate;
+                            } else {
+                                convertedOrderAmount = orderAmount / dailyRate;
+                            }
+
+                            let totalCost = convertedOrderAmount;
+
+                            supplier.serviceCharges.forEach(charge => {
+                                if (evaluateCondition(charge.condition, orderAmount)) {
+                                    const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
+                                    totalCost += chargeAmount;
+                                }
+                            });
+
+                            if (totalCost < lowestTotalCost) {
+                                lowestTotalCost = totalCost;
+                                bestSupplier = supplier.name;
+                            }
+                        }
                     }
                 }
-            }
+            });
+
+            const bestSupplierCell = row.querySelector('.best-supplier');
+            bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
         });
 
-        const bestSupplierCell = row.querySelector('.best-supplier');
-        bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
+        alert('Best supplier calculation completed.');
     });
 
-    alert('Best supplier calculation completed.');
-});
+    function evaluateCondition(condition, amount) {
+        try {
+            if (!condition) return false;
+            condition = condition.toLowerCase();
 
-// Helper function to evaluate conditions
-function evaluateCondition(condition, amount) {
-    try {
-        if (!condition) return false;
-        condition = condition.toLowerCase();
-        
-        // Handle basic numerical conditions
-        if (condition.includes('>')) {
-            const value = parseFloat(condition.split('>')[1]);
-            return amount > value;
-        } else if (condition.includes('<')) {
-            const value = parseFloat(condition.split('<')[1]);
-            return amount < value;
-        } else if (condition.includes('-')) {
-            const [min, max] = condition.split('-').map(parseFloat);
-            return amount >= min && amount <= max;
-        }
-        
-        // Handle complex conditions
-        if (condition.includes('company account')) {
-            // Add specific company account logic here
+            if (condition.includes('>')) {
+                const value = parseFloat(condition.split('>')[1]);
+                return amount > value;
+            } else if (condition.includes('<')) {
+                const value = parseFloat(condition.split('<')[1]);
+                return amount < value;
+            } else if (condition.includes('-')) {
+                const [min, max] = condition.split('-').map(parseFloat);
+                return amount >= min && amount <= max;
+            }
+
+            if (condition.includes('company account')) {
+                return true;
+            }
+
             return true;
+        } catch (e) {
+            console.error(`Error evaluating condition: ${condition}`, e);
+            return false;
         }
-        
-        return true; // Default to true for unrecognized conditions
-    } catch (e) {
-        console.error(`Error evaluating condition: ${condition}`, e);
-        return false;
     }
-}
 
     document.getElementById('toggleManagementBtn').addEventListener('click', function () {
         const section = document.getElementById('supplierManagementSection');
@@ -530,6 +518,15 @@ function evaluateCondition(condition, amount) {
 
     let suppliers = [];
     let editingSupplierIndex = -1;
+
+    window.addEventListener('load', function() {
+        const storedSuppliers = localStorage.getItem('suppliers');
+        if (storedSuppliers) {
+            suppliers = JSON.parse(storedSuppliers);
+            updateSupplierTables();
+            updateDailyRateSection();
+        }
+    });
 
     document.getElementById('add-amount-range-btn').addEventListener('click', () => {
         const amountRangeItem = document.createElement('div');
@@ -563,7 +560,7 @@ function evaluateCondition(condition, amount) {
     function handleServiceTypeChange() {
         const selectedService = document.getElementById('service-type').value;
         const additionalQuestionsContainer = document.getElementById('additional-questions-container');
-        additionalQuestionsContainer.innerHTML = ''; // Clear existing questions
+        additionalQuestionsContainer.innerHTML = '';
 
         if (selectedService === 'bank-express' || selectedService === 'bank-saver') {
             additionalQuestionsContainer.innerHTML = `
@@ -638,17 +635,18 @@ function evaluateCondition(condition, amount) {
                 document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
             }
 
+            localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Save updated data
+
             updateSupplierTables();
-            updateDailyRateSection(); // Update the daily rate section
+            updateDailyRateSection();
             clearSupplierForm();
         }
     });
 
     function updateDailyRateSection() {
         const dailyRateSection = document.getElementById('daily-rate-section');
-        dailyRateSection.innerHTML = ''; // Clear existing content
+        dailyRateSection.innerHTML = '';
 
-        // Group suppliers by their service type
         const suppliersByService = suppliers.reduce((acc, supplier) => {
             if (!acc[supplier.serviceType]) {
                 acc[supplier.serviceType] = [];
@@ -657,7 +655,6 @@ function evaluateCondition(condition, amount) {
             return acc;
         }, {});
 
-        // Create the daily rate section dynamically
         for (const [serviceType, suppliersList] of Object.entries(suppliersByService)) {
             const serviceHeader = document.createElement('h4');
             serviceHeader.textContent = `Service: ${serviceType.replace(/-/g, ' ')}`;
@@ -684,7 +681,7 @@ function evaluateCondition(condition, amount) {
             'alipay': document.getElementById('alipay-table-body')
         };
 
-        Object.values(tables).forEach(table => table.innerHTML = ''); // Clear all tables
+        Object.values(tables).forEach(table => table.innerHTML = '');
 
         suppliers.forEach((supplier, index) => {
             const row = `
@@ -711,7 +708,7 @@ function evaluateCondition(condition, amount) {
         document.getElementById('supplier-name').value = supplier.name;
         document.getElementById('service-type').value = supplier.serviceType;
 
-        document.getElementById('amount-limits-section').innerHTML = ''; // Clear existing amount ranges
+        document.getElementById('amount-limits-section').innerHTML = '';
         supplier.amountLimits.forEach(range => {
             const amountRangeItem = document.createElement('div');
             amountRangeItem.classList.add('amount-range-item');
@@ -722,7 +719,7 @@ function evaluateCondition(condition, amount) {
             document.getElementById('amount-limits-section').appendChild(amountRangeItem);
         });
 
-        document.getElementById('service-charge-section').innerHTML = ''; // Clear existing service charges
+        document.getElementById('service-charge-section').innerHTML = '';
         supplier.serviceCharges.forEach(charge => {
             const serviceChargeItem = document.createElement('div');
             serviceChargeItem.classList.add('service-charge-item');
@@ -740,7 +737,7 @@ function evaluateCondition(condition, amount) {
             document.getElementById('service-charge-section').appendChild(serviceChargeItem);
         });
 
-        document.getElementById('additional-questions-container').innerHTML = ''; // Clear existing additional questions
+        document.getElementById('additional-questions-container').innerHTML = '';
         supplier.additionalQuestions.forEach(question => {
             const questionDiv = document.createElement('div');
             questionDiv.classList.add('form-row');
@@ -760,8 +757,9 @@ function evaluateCondition(condition, amount) {
 
     function deleteSupplier(index) {
         suppliers.splice(index, 1);
+        localStorage.setItem('suppliers', JSON.stringify(suppliers));
         updateSupplierTables();
-        updateDailyRateSection(); // Reflect changes in the daily rate section
+        updateDailyRateSection();
     }
 
     function removeItem(button) {
@@ -789,8 +787,10 @@ function evaluateCondition(condition, amount) {
         });
     });
 
-    document.querySelector('.tab').click(); // Activate the first tab by default
+    document.querySelector('.tab').click();
 
-    // Initial call to populate the Daily Rate section on page load
     updateDailyRateSection();
 </script>
+
+</body>
+</html>
