@@ -568,66 +568,75 @@ input:focus, select:focus {
         document.getElementById('service-charge-section').appendChild(serviceChargeItem);
     });
 
-    document.getElementById('service-type').addEventListener('change', handleServiceTypeChange);
+    // Updated dynamic additional questions code for "Add/Edit Suppliers" section
+document.getElementById('service-type').addEventListener('change', handleServiceTypeChange);
 
-    function handleServiceTypeChange() {
-        const selectedService = document.getElementById('service-type').value;
-        const additionalQuestionsContainer = document.getElementById('additional-questions-container');
+function handleServiceTypeChange() {
+    const selectedService = document.getElementById('service-type').value;
+    const additionalQuestionsContainer = document.getElementById('additional-questions-container');
+    additionalQuestionsContainer.innerHTML = '';
+
+    if (selectedService === 'bank-express' || selectedService === 'bank-saver') {
+        additionalQuestionsContainer.innerHTML = `
+            <div class="form-row">
+                <label>English Account</label>
+                <select id="englishAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>工商银行 Account</label>
+                <select id="gsyhAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>农业银行 Account</label>
+                <select id="nongyehAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        `;
+    } else if (selectedService === 'usd-transfer') {
+        additionalQuestionsContainer.innerHTML = `
+            <div class="form-row">
+                <label>Account Type</label>
+                <select id="accountType">
+                    <option value="personal">Personal</option>
+                    <option value="company">Company</option>
+                </select>
+            </div>
+        `;
+    } else if (selectedService === 'alipay') {
+        additionalQuestionsContainer.innerHTML = `
+            <div class="form-row">
+                <label>English Account</label>
+                <select id="englishAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>Chinese Account</label>
+                <select id="chineseAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        `;
+    } else {
         additionalQuestionsContainer.innerHTML = '';
-
-        if (selectedService === 'bank-express' || selectedService === 'bank-saver') {
-            additionalQuestionsContainer.innerHTML = `
-                <div class="form-row">
-                    <label>English Account</label>
-                    <select>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <label>工商银行 Account</label>
-                    <select>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <label>农业银行 Account</label>
-                    <select>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-            `;
-        } else if (selectedService === 'usd-transfer') {
-            additionalQuestionsContainer.innerHTML = `
-                <div class="form-row">
-                    <label>Account Type</label>
-                    <select>
-                        <option value="personal">Personal</option>
-                        <option value="company">Company</option>
-                    </select>
-                </div>
-            `;
-        } else if (selectedService === 'alipay') {
-            additionalQuestionsContainer.innerHTML = `
-                <div class="form-row">
-                    <label>English Account</label>
-                    <select>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <label>Chinese Account</label>
-                    <select>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-            `;
-        }
     }
+}
+
+// Initialize additional questions on page load if a type is already selected
+window.addEventListener('load', () => {
+    handleServiceTypeChange();
+});
+
 
     document.getElementById('add-supplier-btn').addEventListener('click', () => {
         const name = document.getElementById('supplier-name').value;
