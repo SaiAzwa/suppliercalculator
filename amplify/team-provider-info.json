@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-suppliermanagement-dev-0f391-authRole",
+      "UnauthRoleArn": "arn:aws:iam::182399719860:role/amplify-suppliermanagement-dev-0f391-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::182399719860:role/amplify-suppliermanagement-dev-0f391-authRole",
+      "Region": "ap-southeast-2",
+      "DeploymentBucketName": "amplify-suppliermanagement-dev-0f391-deployment",
+      "UnauthRoleName": "amplify-suppliermanagement-dev-0f391-unauthRole",
+      "StackName": "amplify-suppliermanagement-dev-0f391",
+      "StackId": "arn:aws:cloudformation:ap-southeast-2:182399719860:stack/amplify-suppliermanagement-dev-0f391/02717cd0-9f40-11ef-8079-0a2b57754ccf",
+      "AmplifyAppId": "d2z38cwn6l5s5b"
+    },
+    "categories": {
+      "auth": {
+        "suppliermanagement38a022ca": {}
+      }
+    }
+  }
+}
