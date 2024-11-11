@@ -307,8 +307,9 @@ window.addEventListener('load', async function() {
     }
 });
 
-// Function to add a new supplier and save to Google Sheets
 document.getElementById('add-supplier-btn').addEventListener('click', async () => {
+    console.log("Add Supplier button clicked"); // Confirm button click
+
     const name = document.getElementById('supplier-name').value;
     const serviceType = document.getElementById('service-type').value;
     const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
@@ -321,16 +322,20 @@ document.getElementById('add-supplier-btn').addEventListener('click', async () =
         value: row.querySelector('select').value
     }));
 
-    const supplierData = {
-        name,
-        services: [{
-            serviceType,
-            amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
-            serviceCharges,
-            additionalQuestions
-        }]
-    };
+    // Log collected data to verify correct gathering
+    console.log("Collected Data:", { name, serviceType, amountLimits, serviceCharges, additionalQuestions });
 
+    // Validation check
+    if (!name || !serviceType || amountLimits.length === 0) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    // Skip API call for now, just show data
+    alert("Supplier data prepared successfully.");
+
+    // Uncomment below to perform the API call once data collection works
+    /*
     try {
         const response = await fetch(apiURL, {
             method: 'POST',
@@ -338,6 +343,7 @@ document.getElementById('add-supplier-btn').addEventListener('click', async () =
             body: JSON.stringify(supplierData)
         });
         const result = await response.json();
+
         if (result.status === "success") {
             alert("Supplier added successfully.");
             suppliers.push(supplierData);
@@ -350,6 +356,7 @@ document.getElementById('add-supplier-btn').addEventListener('click', async () =
     } catch (error) {
         console.error('Failed to save supplier:', error);
     }
+    */
 });
 
 // Update supplier tables in UI based on suppliers array
