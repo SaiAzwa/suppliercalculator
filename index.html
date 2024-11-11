@@ -815,10 +815,15 @@ window.addEventListener('load', () => {
     handleServiceTypeChange();
 });
 
+// Toggle visibility of the supplier management section
 document.getElementById('toggleManagementBtn').addEventListener('click', function () {
     const section = document.getElementById('supplierManagementSection');
-    section.classList.toggle('hidden');
-    this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
+    if (section) {
+        section.classList.toggle('hidden');
+        this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
+    } else {
+        console.warn("Supplier management section not found in the DOM.");
+    }
 });
 
 document.getElementById('serviceType').addEventListener('change', function () {
