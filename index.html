@@ -701,6 +701,73 @@ window.addEventListener('load', () => {
     handleServiceTypeChange();
 });
 
+document.getElementById('toggleManagementBtn').addEventListener('click', function () {
+    const section = document.getElementById('supplierManagementSection');
+    section.classList.toggle('hidden');
+    this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
+});
+
+document.getElementById('serviceType').addEventListener('change', function () {
+    const additionalQuestionsContainer = document.getElementById('additionalQuestions');
+    additionalQuestionsContainer.innerHTML = ''; // Clear previous questions
+
+    const selectedService = this.value;
+
+    // Additional questions for Bank Transfer Saver and Express
+    if (selectedService === 'bankTransferSaver' || selectedService === 'bankTransferExpress') {
+        additionalQuestionsContainer.innerHTML = `
+            <div class="form-group">
+                <label for="englishAccount">English Account:</label>
+                <select id="englishAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="gsyhAccount">工商银行 Account:</label>
+                <select id="gsyhAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="nongyehAccount">农业银行 Account:</label>
+                <select id="nongyehAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        `;
+    } else if (selectedService === 'bankTransferUSD') {
+        additionalQuestionsContainer.innerHTML = `
+            <div class="form-group">
+                <label for="accountType">Account Type:</label>
+                <select id="accountType">
+                    <option value="personal">Personal</option>
+                    <option value="company">Company</option>
+                </select>
+            </div>
+        `;
+    } else if (selectedService === 'alipay') {
+        additionalQuestionsContainer.innerHTML = `
+            <div class="form-group">
+                <label for="englishAccount">English Account:</label>
+                <select id="englishAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="chineseAccount">Chinese Account:</label>
+                <select id="chineseAccount">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        `;
+    }
+});
+
 </script>
     
 </body>
