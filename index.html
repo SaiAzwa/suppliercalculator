@@ -340,12 +340,21 @@ document.getElementById('add-supplier-btn').addEventListener('click', () => {
         return;
     }
 
-    // Add supplier to local array and update UI
-    suppliers.push(supplierData);
+    if (editingSupplierIndex > -1) {
+        // If editing, update the existing supplier
+        suppliers[editingSupplierIndex] = supplierData;
+        editingSupplierIndex = -1;
+        alert("Supplier updated locally. Click 'Sync Data' to save to the database.");
+        document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
+    } else {
+        // If adding new, push to local array
+        suppliers.push(supplierData);
+        alert("Supplier added locally. Click 'Sync Data' to save to the database.");
+    }
+
     updateSupplierTables();
     updateDailyRateSection();
     clearSupplierForm();
-    alert("Supplier added locally. Click 'Sync Data' to save to the database.");
 });
 
 function updateSupplierTables() {
@@ -391,6 +400,78 @@ function updateSupplierTables() {
     });
 }
 
+function updateDailyRateSection() {
+    const dailyRateSection = document.getElementById('daily-rate-section');
+    dailyRateSection.innerHTML = ''; // Clear previous content
+
+    suppliers.forEach(supplier => {
+        supplier.services.forEach(service => {
+            service.amountLimits.forEach(limit => {
+                const rateInput = document.createElement('div');
+                rateInput.innerHTML = `
+                    <label>${supplier.name} - ${service.serviceType} (${limit.limit}):</label>
+                    <input type="number" data-supplier="${supplier.name}" data-service="${service.serviceType}" data-limit="${limit.limit}" value="${limit.rate || ''}" />
+                `;
+                dailyRateSection.appendChild(rateInput);
+            });
+        });
+    });
+}
+
+
+// Function to fill form with supplier data for editing
+function editSupplier(index) {
+    const supplier = suppliers[index];
+    document.getElementById('supplier-name').value = supplier.name;
+    document.getElementById('service-type').value = supplier.services[0].serviceType;
+
+    document.getElementById('amount-limits-section').innerHTML = '';
+    supplier.services[0].amountLimits.forEach(range => {
+        const amountRangeItem = document.createElement('div');
+        amountRangeItem.classList.add('amount-range-item');
+        amountRangeItem.innerHTML = `
+            <input type="text" class="amount-range" value="${range.limit}" />
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+        `;
+        document.getElementById('amount-limits-section').appendChild(amountRangeItem);
+    });
+
+    document.getElementById('service-charge-section').innerHTML = '';
+    supplier.services[0].serviceCharges.forEach(charge => {
+        const serviceChargeItem = document.createElement('div');
+        serviceChargeItem.classList.add('service-charge-item');
+        serviceChargeItem.innerHTML = `
+            <div>
+                <label>Condition</label>
+                <input type="text" class="service-condition" value="${charge.condition}" />
+            </div>
+            <div>
+                <label>Charge</label>
+                <input type="text" class="service-charge" value="${charge.charge}" />
+            </div>
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+        `;
+        document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+    });
+
+    document.getElementById('additional-questions-container').innerHTML = '';
+    supplier.services[0].additionalQuestions.forEach(question => {
+        const questionDiv = document.createElement('div');
+        questionDiv.classList.add('form-row');
+        questionDiv.innerHTML = `
+            <label>${question.label}</label>
+            <select>
+                <option value="yes" ${question.value === 'yes' ? 'selected' : ''}>Yes</option>
+                <option value="no" ${question.value === 'no' ? 'selected' : ''}>No</option>
+            </select>
+        `;
+        document.getElementById('additional-questions-container').appendChild(questionDiv);
+    });
+
+    editingSupplierIndex = index;
+    document.getElementById('add-supplier-btn').textContent = 'Update Supplier';
+}
+
 // Function to save all suppliers to Google Sheets
 async function syncSuppliersToDatabase() {
     try {
@@ -421,11 +502,11 @@ async function syncSuppliersToDatabase() {
 // Add event listener to "Sync Data" button
 document.getElementById('sync-data-btn').addEventListener('click', syncSuppliersToDatabase);
 
-// Function to delete a supplier from Google Sheets
+// Function to delete a supplier from the local array and Google Sheets
 function deleteSupplier(index) {
     const supplierToDelete = suppliers[index].name;
 
-    fetch('https://script.google.com/macros/s/AKfycbwEc-L0uHGAp5WtstUnG-QFI48GITiZdx85nQ4qngSl2nUc7U9ljCCBg5MFsXS0k4g/exec', {
+    fetch(apiURL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'deleteSupplier', supplierName: supplierToDelete })
@@ -433,8 +514,8 @@ function deleteSupplier(index) {
     .then(response => response.json())
     .then(result => {
         if (result.status === "success") {
-            suppliers.splice(index, 1);
-            updateSupplierTables();
+            suppliers.splice(index, 1);  // Remove supplier from local array
+            updateSupplierTables();      // Update the UI tables
             alert('Supplier deleted successfully.');
         } else {
             throw new Error('Failed to delete supplier');
@@ -453,10 +534,12 @@ function saveDailyRates() {
         const limit = input.getAttribute('data-limit');
         const rate = parseFloat(input.value);
 
-        updatedRates.push({ supplierName, serviceType, limit, rate });
+        if (!isNaN(rate)) {
+            updatedRates.push({ supplierName, serviceType, limit, rate });
+        }
     });
 
-    fetch('https://script.google.com/macros/s/AKfycbwEc-L0uHGAp5WtstUnG-QFI48GITiZdx85nQ4qngSl2nUc7U9ljCCBg5MFsXS0k4g/exec', {
+    fetch(apiURL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'updateRates', rates: updatedRates })
@@ -472,6 +555,9 @@ function saveDailyRates() {
     })
     .catch(error => console.error('Error updating rates:', error));
 }
+
+// Add event listener to save rates button if not added already
+document.getElementById('save-daily-rates-btn').addEventListener('click', saveDailyRates);
 
 // Function to edit a supplier's information in the form
 function editSupplier(index) {
