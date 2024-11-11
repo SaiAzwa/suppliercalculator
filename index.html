@@ -308,8 +308,6 @@ window.addEventListener('load', async function() {
 });
 
 document.getElementById('add-supplier-btn').addEventListener('click', async () => {
-    console.log("Add Supplier button clicked"); // Confirm button click
-
     const name = document.getElementById('supplier-name').value;
     const serviceType = document.getElementById('service-type').value;
     const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
@@ -322,8 +320,16 @@ document.getElementById('add-supplier-btn').addEventListener('click', async () =
         value: row.querySelector('select').value
     }));
 
-    // Log collected data to verify correct gathering
-    console.log("Collected Data:", { name, serviceType, amountLimits, serviceCharges, additionalQuestions });
+    // Create supplier data object
+    const supplierData = {
+        name,
+        services: [{
+            serviceType,
+            amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
+            serviceCharges,
+            additionalQuestions
+        }]
+    };
 
     // Validation check
     if (!name || !serviceType || amountLimits.length === 0) {
@@ -331,12 +337,8 @@ document.getElementById('add-supplier-btn').addEventListener('click', async () =
         return;
     }
 
-    // Skip API call for now, just show data
-    alert("Supplier data prepared successfully.");
-
-    // Uncomment below to perform the API call once data collection works
-    /*
     try {
+        // Save supplier to Google Sheets via API
         const response = await fetch(apiURL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -346,17 +348,17 @@ document.getElementById('add-supplier-btn').addEventListener('click', async () =
 
         if (result.status === "success") {
             alert("Supplier added successfully.");
-            suppliers.push(supplierData);
-            updateSupplierTables();
-            updateDailyRateSection();
-            clearSupplierForm();
+            suppliers.push(supplierData); // Update local array with new supplier
+            updateSupplierTables();       // Update the UI tables with new supplier data
+            updateDailyRateSection();     // Update daily rate section if needed
+            clearSupplierForm();          // Clear the form fields after adding
         } else {
             throw new Error('Failed to add supplier');
         }
     } catch (error) {
         console.error('Failed to save supplier:', error);
+        alert("Error adding supplier: " + error.message);
     }
-    */
 });
 
 function updateSupplierTables() {
@@ -368,14 +370,16 @@ function updateSupplierTables() {
         'alipay': document.getElementById('alipay-table-body')
     };
 
-    // Clear existing table content
+    // Clear existing content in each table
     Object.values(tables).forEach(table => table.innerHTML = '');
 
-    console.log("Suppliers Array:", suppliers); // Log suppliers array to verify data
+    console.log("Current Suppliers Array:", suppliers); // Log suppliers array to verify it's updated
 
-    // Iterate over suppliers array to populate each relevant tab
+    // Iterate over each supplier to populate the appropriate table
     suppliers.forEach((supplier, index) => {
         supplier.services.forEach(service => {
+            console.log(`Processing supplier ${supplier.name} for service type ${service.serviceType}`); // Log each supplier and service type
+
             const row = `
                 <tr>
                     <td>${supplier.name}</td>
@@ -388,12 +392,12 @@ function updateSupplierTables() {
                     </td>
                 </tr>
             `;
+
+            // Verify if table exists for service type, then populate
             if (tables[service.serviceType]) {
+                console.log(`Adding supplier ${supplier.name} to table for ${service.serviceType}`);
                 tables[service.serviceType].innerHTML += row;
-            }
-        });
-    });
-}
+            } el
 
 // Function to delete a supplier from Google Sheets
 function deleteSupplier(index) {
