@@ -868,6 +868,23 @@ function clearSupplierForm() {
     editingSupplierIndex = -1;
 }
 
+// Function to handle tab switching for supplier information
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        // Remove active class from all tabs and contents
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+        // Add active class to selected tab and content
+        this.classList.add('active');
+        document.getElementById(`${this.dataset.service}-tab`).classList.add('active');
+    });
+});
+
+// Initialize tabs to show the first tab content on load
+document.querySelector('.tab').click();
+
+
 </script>
     
 </body>
