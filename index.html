@@ -768,6 +768,106 @@ document.getElementById('serviceType').addEventListener('change', function () {
     }
 });
 
+// Functionality to add amount range input in Supplier Management
+document.getElementById('add-amount-range-btn').addEventListener('click', () => {
+    const amountRangeItem = document.createElement('div');
+    amountRangeItem.classList.add('amount-range-item');
+    amountRangeItem.innerHTML = `
+        <input type="text" class="amount-range" placeholder="e.g. '> 0.01' or '10000 - 20000'" />
+        <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+    `;
+    document.getElementById('amount-limits-section').appendChild(amountRangeItem);
+});
+
+// Functionality to add service charge input in Supplier Management
+document.getElementById('add-service-charge-btn').addEventListener('click', () => {
+    const serviceChargeItem = document.createElement('div');
+    serviceChargeItem.classList.add('service-charge-item');
+    serviceChargeItem.innerHTML = `
+        <div>
+            <label>Condition</label>
+            <input type="text" class="service-condition" placeholder="e.g. 'Company Account > 2000 USD'" />
+        </div>
+        <div>
+            <label>Charge</label>
+            <input type="text" class="service-charge" placeholder="e.g. 'CNY 50'" />
+        </div>
+        <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+    `;
+    document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+});
+
+// Helper function to remove an item dynamically
+function removeItem(button) {
+    const item = button.parentNode;
+    item.parentNode.removeChild(item);
+}
+
+// Functionality to add a new supplier and save to Google Sheets
+document.getElementById('add-supplier-btn').addEventListener('click', async () => {
+    const name = document.getElementById('supplier-name').value;
+    const serviceType = document.getElementById('service-type').value;
+    const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
+    const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => ({
+        condition: item.querySelector('.service-condition').value,
+        charge: item.querySelector('.service-charge').value
+    }));
+    const additionalQuestions = Array.from(document.querySelectorAll('#additional-questions-container .form-row')).map(row => ({
+        label: row.querySelector('label').textContent,
+        value: row.querySelector('select').value
+    }));
+
+    // Create supplier data object
+    const supplierData = {
+        name,
+        services: [{
+            serviceType,
+            amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
+            serviceCharges,
+            additionalQuestions
+        }]
+    };
+
+    // Validate input
+    if (!name || !serviceType || amountLimits.length === 0) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    try {
+        // Save supplier to Google Sheets via API
+        const response = await fetch(apiURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(supplierData)
+        });
+        const result = await response.json();
+
+        if (result.status === "success") {
+            alert("Supplier added successfully.");
+            suppliers.push(supplierData); // Update local array with new supplier
+            updateSupplierTables();       // Update the UI tables with new supplier data
+            updateDailyRateSection();     // Update daily rate section if needed
+            clearSupplierForm();          // Clear the form fields after adding
+        } else {
+            throw new Error('Failed to add supplier');
+        }
+    } catch (error) {
+        console.error('Failed to save supplier:', error);
+    }
+});
+
+// Function to clear the supplier form after adding or updating a supplier
+function clearSupplierForm() {
+    document.getElementById('supplier-name').value = '';
+    document.getElementById('service-type').value = '';
+    document.getElementById('amount-limits-section').innerHTML = '';
+    document.getElementById('service-charge-section').innerHTML = '';
+    document.getElementById('additional-questions-container').innerHTML = '';
+    document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
+    editingSupplierIndex = -1;
+}
+
 </script>
     
 </body>
