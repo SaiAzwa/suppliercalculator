@@ -397,7 +397,12 @@ function updateSupplierTables() {
             if (tables[service.serviceType]) {
                 console.log(`Adding supplier ${supplier.name} to table for ${service.serviceType}`);
                 tables[service.serviceType].innerHTML += row;
-            } el
+            } else {
+                console.warn(`No matching table found for service type ${service.serviceType}`);
+            }
+        });
+    });
+}
 
 // Function to delete a supplier from Google Sheets
 function deleteSupplier(index) {
