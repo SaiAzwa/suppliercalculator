@@ -298,7 +298,7 @@ let editingSupplierIndex = -1;
 // Load suppliers from Google Sheets on page load
 window.addEventListener('load', async function() {
     try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbwEc-L0uHGAp5WtstUnG-QFI48GITiZdx85nQ4qngSl2nUc7U9ljCCBg5MFsXS0k4g/exec');F
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwEc-L0uHGAp5WtstUnG-QFI48GITiZdx85nQ4qngSl2nUc7U9ljCCBg5MFsXS0k4g/exec');
         suppliers = await response.json();
         updateSupplierTables();
         updateDailyRateSection();
