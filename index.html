@@ -803,60 +803,6 @@ function removeItem(button) {
     item.parentNode.removeChild(item);
 }
 
-// Functionality to add a new supplier and save to Google Sheets
-document.getElementById('add-supplier-btn').addEventListener('click', async () => {
-    const name = document.getElementById('supplier-name').value;
-    const serviceType = document.getElementById('service-type').value;
-    const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
-    const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => ({
-        condition: item.querySelector('.service-condition').value,
-        charge: item.querySelector('.service-charge').value
-    }));
-    const additionalQuestions = Array.from(document.querySelectorAll('#additional-questions-container .form-row')).map(row => ({
-        label: row.querySelector('label').textContent,
-        value: row.querySelector('select').value
-    }));
-
-    // Create supplier data object
-    const supplierData = {
-        name,
-        services: [{
-            serviceType,
-            amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
-            serviceCharges,
-            additionalQuestions
-        }]
-    };
-
-    // Validate input
-    if (!name || !serviceType || amountLimits.length === 0) {
-        alert("Please fill in all required fields.");
-        return;
-    }
-
-    try {
-        // Save supplier to Google Sheets via API
-        const response = await fetch(apiURL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(supplierData)
-        });
-        const result = await response.json();
-
-        if (result.status === "success") {
-            alert("Supplier added successfully.");
-            suppliers.push(supplierData); // Update local array with new supplier
-            updateSupplierTables();       // Update the UI tables with new supplier data
-            updateDailyRateSection();     // Update daily rate section if needed
-            clearSupplierForm();          // Clear the form fields after adding
-        } else {
-            throw new Error('Failed to add supplier');
-        }
-    } catch (error) {
-        console.error('Failed to save supplier:', error);
-    }
-});
-
 // Function to clear the supplier form after adding or updating a supplier
 function clearSupplierForm() {
     document.getElementById('supplier-name').value = '';
