@@ -359,7 +359,6 @@ document.getElementById('add-supplier-btn').addEventListener('click', async () =
     */
 });
 
-// Update supplier tables in UI based on suppliers array
 function updateSupplierTables() {
     const tables = {
         'bank-express': document.getElementById('bank-express-table-body'),
@@ -369,8 +368,12 @@ function updateSupplierTables() {
         'alipay': document.getElementById('alipay-table-body')
     };
 
+    // Clear existing table content
     Object.values(tables).forEach(table => table.innerHTML = '');
 
+    console.log("Suppliers Array:", suppliers); // Log suppliers array to verify data
+
+    // Iterate over suppliers array to populate each relevant tab
     suppliers.forEach((supplier, index) => {
         supplier.services.forEach(service => {
             const row = `
