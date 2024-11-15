@@ -683,33 +683,49 @@ function editSupplier(index) {
 
 // Function to dynamically manage the calculator for determining the best supplier
 document.getElementById('createOrderBtn').addEventListener('click', function () {
-    const serviceType = document.getElementById('serviceType').value;
-    const orderAmount = parseFloat(document.getElementById('orderAmount').value);
-    const orderTable = document.getElementById('orderTable').querySelector('tbody');
+    const serviceType = document.getElementById('serviceType')?.value;
+    const orderAmount = parseFloat(document.getElementById('orderAmount')?.value);
+    const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
 
+    // Validate required fields
     if (!serviceType || isNaN(orderAmount) || orderAmount <= 0.01) {
         alert('Please select a valid service type and enter a valid order amount.');
         return;
     }
 
-    let additionalInfo = '';
-    if (serviceType === 'bankTransferSaver' || serviceType === 'bankTransferExpress') {
-        additionalInfo = `
-            English Account: ${document.getElementById('englishAccount').value},
-            工商银行 Account: ${document.getElementById('gsyhAccount').value},
-            农业银行 Account: ${document.getElementById('nongyehAccount').value}
-        `;
-    } else if (serviceType === 'bankTransferUSD') {
-        additionalInfo = `Account Type: ${document.getElementById('accountType').value}`;
-    } else if (serviceType === 'alipay') {
-        additionalInfo = `
-            English Account: ${document.getElementById('englishAccount').value},
-            Chinese Account: ${document.getElementById('chineseAccount').value}
-        `;
-    } else {
-        additionalInfo = 'N/A';
+    if (!orderTable) {
+        console.error('Order table not found in the DOM.');
+        alert('Order table is missing. Please contact support.');
+        return;
     }
 
+    // Map of additional questions for each service type
+    const additionalInfoMapping = {
+        bankTransferSaver: () => `
+            English Account: ${document.getElementById('englishAccount')?.value || 'N/A'},
+            工商银行 Account: ${document.getElementById('gsyhAccount')?.value || 'N/A'},
+            农业银行 Account: ${document.getElementById('nongyehAccount')?.value || 'N/A'}
+        `,
+        bankTransferExpress: () => `
+            English Account: ${document.getElementById('englishAccount')?.value || 'N/A'},
+            工商银行 Account: ${document.getElementById('gsyhAccount')?.value || 'N/A'},
+            农业银行 Account: ${document.getElementById('nongyehAccount')?.value || 'N/A'}
+        `,
+        bankTransferUSD: () => `
+            Account Type: ${document.getElementById('accountType')?.value || 'N/A'}
+        `,
+        alipay: () => `
+            English Account: ${document.getElementById('englishAccount')?.value || 'N/A'},
+            Chinese Account: ${document.getElementById('chineseAccount')?.value || 'N/A'}
+        `
+    };
+
+    // Determine additional information based on service type
+    const additionalInfo = additionalInfoMapping[serviceType]
+        ? additionalInfoMapping[serviceType]()
+        : 'N/A';
+
+    // Create a new row for the order table
     const newRow = document.createElement('tr');
     newRow.innerHTML = `
         <td>${serviceType.replace(/([A-Z])/g, ' $1').trim()}</td>
@@ -718,66 +734,8 @@ document.getElementById('createOrderBtn').addEventListener('click', function () 
         <td class="best-supplier">Calculating...</td>
     `;
     orderTable.appendChild(newRow);
-});
 
-document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
-    const rows = document.querySelectorAll('#orderTable tbody tr');
-
-    if (rows.length === 0) {
-        alert('No orders to process.');
-        return;
-    }
-
-    rows.forEach(row => {
-        const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
-        const orderAmount = parseFloat(row.cells[1].textContent.trim());
-        const additionalInfoCell = row.cells[2].textContent.trim();
-        let bestSupplier = null;
-        let lowestTotalCost = Infinity;
-
-        const additionalInfo = {};
-        additionalInfoCell.split(',').forEach(info => {
-            const [key, value] = info.split(':').map(s => s.trim());
-            if (key && value) {
-                additionalInfo[key.toLowerCase()] = value.toLowerCase();
-            }
-        });
-
-        suppliers.forEach(supplier => {
-            const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
-            if (service) {
-                const amountLimit = service.amountLimits.find(a => {
-                    const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
-                    return orderAmount >= min && orderAmount <= max;
-                });
-
-                if (amountLimit && amountLimit.rate) {
-                    let convertedOrderAmount = serviceTypeCell === 'usd transfer'
-                        ? orderAmount * amountLimit.rate
-                        : orderAmount / amountLimit.rate;
-
-                    let totalCost = convertedOrderAmount;
-
-                    service.serviceCharges.forEach(charge => {
-                        if (evaluateCondition(charge.condition, orderAmount)) {
-                            const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
-                            totalCost += chargeAmount;
-                        }
-                    });
-
-                    if (totalCost < lowestTotalCost) {
-                        lowestTotalCost = totalCost;
-                        bestSupplier = supplier.name;
-                    }
-                }
-            }
-        });
-
-        const bestSupplierCell = row.querySelector('.best-supplier');
-        bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
-    });
-
-    alert('Best supplier calculation completed.');
+    console.log(`Order created: Service Type - ${serviceType}, Amount - ${orderAmount}`);
 });
 
 // Function to evaluate conditions for supplier charges
@@ -803,6 +761,92 @@ function evaluateCondition(condition, amount) {
         return false;
     }
 }
+
+document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
+    const rows = document.querySelectorAll('#orderTable tbody tr');
+
+    // Validate if there are orders to process
+    if (rows.length === 0) {
+        alert('No orders to process.');
+        console.warn('No rows found in the order table.');
+        return;
+    }
+
+    if (!suppliers || suppliers.length === 0) {
+        alert('No suppliers available for calculations.');
+        console.error('The suppliers array is empty or undefined.');
+        return;
+    }
+
+    rows.forEach(row => {
+        const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
+        const orderAmount = parseFloat(row.cells[1].textContent.trim());
+        const additionalInfoCell = row.cells[2].textContent.trim();
+        let bestSupplier = null;
+        let lowestTotalCost = Infinity;
+
+        // Parse additional info
+        const additionalInfo = {};
+        additionalInfoCell.split(',').forEach(info => {
+            const [key, value] = info.split(':').map(s => s.trim());
+            if (key && value) {
+                additionalInfo[key.toLowerCase()] = value.toLowerCase();
+            } else {
+                console.warn(`Invalid additional info entry: ${info}`);
+            }
+        });
+
+        // Iterate through suppliers
+        suppliers.forEach(supplier => {
+            const service = supplier.services.find(s => 
+                s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell
+            );
+
+            if (service) {
+                const amountLimit = service.amountLimits.find(a => {
+                    const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
+                    return orderAmount >= min && orderAmount <= max;
+                });
+
+                if (amountLimit && amountLimit.rate) {
+                    let convertedOrderAmount = serviceTypeCell === 'usd transfer'
+                        ? orderAmount * amountLimit.rate
+                        : orderAmount / amountLimit.rate;
+
+                    let totalCost = convertedOrderAmount;
+
+                    // Apply service charges
+                    service.serviceCharges.forEach(charge => {
+                        if (evaluateCondition(charge.condition, orderAmount)) {
+                            const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
+                            if (!isNaN(chargeAmount)) {
+                                totalCost += chargeAmount;
+                            } else {
+                                console.warn(`Invalid charge value: ${charge.charge}`);
+                            }
+                        }
+                    });
+
+                    // Determine if this supplier is the best so far
+                    if (totalCost < lowestTotalCost) {
+                        lowestTotalCost = totalCost;
+                        bestSupplier = supplier.name;
+                    }
+                }
+            }
+        });
+
+        // Update the table with the best supplier
+        const bestSupplierCell = row.querySelector('.best-supplier');
+        bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
+
+        if (!bestSupplier) {
+            console.warn(`No suitable supplier found for order: Service Type - ${serviceTypeCell}, Amount - ${orderAmount}`);
+        }
+    });
+
+    alert('Best supplier calculation completed.');
+});
 
 // Function to dynamically add or edit supplier fields
 function removeItem(button) {
@@ -892,30 +936,62 @@ window.addEventListener('load', () => {
     generateAdditionalQuestions(initialServiceType, 'additional-questions-container');
 });
 
-// Toggle visibility of the supplier management section
-document.getElementById('toggleManagementBtn').addEventListener('click', function () {
-    const section = document.getElementById('supplierManagementSection');
-    if (!section) {
-        console.warn("Supplier management section not found in the DOM.");
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleManagementBtn = document.getElementById('toggleManagementBtn');
+    const supplierManagementSection = document.getElementById('supplierManagementSection');
+
+    // Validate that the required elements exist
+    if (!toggleManagementBtn || !supplierManagementSection) {
+        console.error('Toggle Management Button or Supplier Management Section not found in the DOM.');
         return;
     }
 
-    section.classList.toggle('hidden');
-    this.textContent = section.classList.contains('hidden')
-        ? 'Show Supplier Management'
-        : 'Hide Supplier Management';
+    toggleManagementBtn.addEventListener('click', function () {
+        // Toggle the hidden class on the supplier management section
+        supplierManagementSection.classList.toggle('hidden');
+
+        // Update the button text based on the visibility state
+        this.textContent = supplierManagementSection.classList.contains('hidden')
+            ? 'Show Supplier Management'
+            : 'Hide Supplier Management';
+
+        console.log(`Supplier Management Section is now ${supplierManagementSection.classList.contains('hidden') ? 'hidden' : 'visible'}.`);
+    });
 });
 
-// Functionality to add amount range input in Supplier Management
-document.getElementById('add-amount-range-btn').addEventListener('click', () => {
-    const amountRangeItem = document.createElement('div');
-    amountRangeItem.classList.add('amount-range-item');
-    amountRangeItem.innerHTML = `
-        <input type="text" class="amount-range" placeholder="e.g. '> 0.01' or '10000 - 20000'" />
-        <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
-    `;
-    document.getElementById('amount-limits-section').appendChild(amountRangeItem);
+document.addEventListener('DOMContentLoaded', function () {
+    const addAmountRangeBtn = document.getElementById('add-amount-range-btn');
+    const amountLimitsSection = document.getElementById('amount-limits-section');
+
+    // Validate that the required elements exist
+    if (!addAmountRangeBtn || !amountLimitsSection) {
+        console.error('Add Amount Range Button or Amount Limits Section not found in the DOM.');
+        return;
+    }
+
+    addAmountRangeBtn.addEventListener('click', () => {
+        const amountRangeItem = document.createElement('div');
+        amountRangeItem.classList.add('amount-range-item');
+        amountRangeItem.innerHTML = `
+            <input type="text" class="amount-range" placeholder="e.g. '> 0.01' or '10000 - 20000'" />
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+        `;
+
+        amountLimitsSection.appendChild(amountRangeItem);
+        console.log('New amount range item added to the Amount Limits Section.');
+    });
 });
+
+// Helper function to remove a dynamically added item
+function removeItem(button) {
+    if (button && button.parentNode && button.parentNode.parentNode) {
+        button.parentNode.parentNode.removeChild(button.parentNode);
+        console.log('Amount range item removed.');
+    } else {
+        console.warn('Failed to remove item. Invalid button or parent node.');
+    }
+}
+
 
 // Functionality to add service charge input in Supplier Management
 document.getElementById('add-service-charge-btn').addEventListener('click', () => {
