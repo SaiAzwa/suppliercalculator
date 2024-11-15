@@ -993,23 +993,45 @@ function removeItem(button) {
 }
 
 
-// Functionality to add service charge input in Supplier Management
-document.getElementById('add-service-charge-btn').addEventListener('click', () => {
-    const serviceChargeItem = document.createElement('div');
-    serviceChargeItem.classList.add('service-charge-item');
-    serviceChargeItem.innerHTML = `
-        <div>
-            <label>Condition</label>
-            <input type="text" class="service-condition" placeholder="e.g. 'Company Account > 2000 USD'" />
-        </div>
-        <div>
-            <label>Charge</label>
-            <input type="text" class="service-charge" placeholder="e.g. 'CNY 50'" />
-        </div>
-        <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
-    `;
-    document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+document.addEventListener('DOMContentLoaded', function () {
+    const addServiceChargeBtn = document.getElementById('add-service-charge-btn');
+    const serviceChargeSection = document.getElementById('service-charge-section');
+
+    // Validate that the required elements exist
+    if (!addServiceChargeBtn || !serviceChargeSection) {
+        console.error('Add Service Charge Button or Service Charge Section not found in the DOM.');
+        return;
+    }
+
+    addServiceChargeBtn.addEventListener('click', () => {
+        const serviceChargeItem = document.createElement('div');
+        serviceChargeItem.classList.add('service-charge-item');
+        serviceChargeItem.innerHTML = `
+            <div>
+                <label>Condition</label>
+                <input type="text" class="service-condition" placeholder="e.g. 'Company Account > 2000 USD'" />
+            </div>
+            <div>
+                <label>Charge</label>
+                <input type="text" class="service-charge" placeholder="e.g. 'CNY 50'" />
+            </div>
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+        `;
+
+        serviceChargeSection.appendChild(serviceChargeItem);
+        console.log('New service charge item added to the Service Charge Section.');
+    });
 });
+
+// Helper function to remove dynamically added items
+function removeItem(button) {
+    if (button && button.parentNode && button.parentNode.parentNode) {
+        button.parentNode.parentNode.removeChild(button.parentNode);
+        console.log('Service charge item removed.');
+    } else {
+        console.warn('Failed to remove item. Invalid button or parent node.');
+    }
+}
 
 // Helper function to remove an item dynamically
 function removeItem(button) {
