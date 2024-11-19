@@ -289,11 +289,11 @@ input:focus, select:focus {
     </div>
 </div>
 <script>
-    // Updated data structure for suppliers
     let suppliers = [];
+    let editingSupplierIndex = -1;
 
     // Load suppliers from localStorage on page load
-    window.addEventListener('load', function() {
+    window.addEventListener('load', function () {
         const storedSuppliers = localStorage.getItem('suppliers');
         if (storedSuppliers) {
             suppliers = JSON.parse(storedSuppliers);
@@ -302,219 +302,180 @@ input:focus, select:focus {
         }
     });
 
+    // Toggle Supplier Management Section
     document.getElementById('toggleManagementBtn').addEventListener('click', function () {
         const section = document.getElementById('supplierManagementSection');
         section.classList.toggle('hidden');
         this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
     });
 
-    document.getElementById('serviceType').addEventListener('change', function () {
-        const additionalQuestionsContainer = document.getElementById('additionalQuestions');
-        additionalQuestionsContainer.innerHTML = '';
-
-        const selectedService = this.value;
-
-        // Additional questions for Bank Transfer Saver and Express
-        if (selectedService === 'bankTransferSaver' || selectedService === 'bankTransferExpress') {
-            additionalQuestionsContainer.innerHTML = `
-                <div class="form-group">
-                    <label for="englishAccount">English Account:</label>
-                    <select id="englishAccount">
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="gsyhAccount">工商银行 Account:</label>
-                    <select id="gsyhAccount">
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="nongyehAccount">农业银行 Account:</label>
-                    <select id="nongyehAccount">
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-            `;
-        } else if (selectedService === 'bankTransferUSD') {
-            additionalQuestionsContainer.innerHTML = `
-                <div class="form-group">
-                    <label for="accountType">Account Type:</label>
-                    <select id="accountType">
-                        <option value="personal">Personal</option>
-                        <option value="company">Company</option>
-                    </select>
-                </div>
-            `;
-        } else if (selectedService === 'alipay') {
-            additionalQuestionsContainer.innerHTML = `
-                <div class="form-group">
-                    <label for="englishAccount">English Account:</label>
-                    <select id="englishAccount">
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="chineseAccount">Chinese Account:</label>
-                    <select id="chineseAccount">
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-            `;
-        }
-    });
-
-    document.getElementById('createOrderBtn').addEventListener('click', function () {
-        const serviceType = document.getElementById('serviceType').value;
-        const orderAmount = document.getElementById('orderAmount').value;
-        const orderTable = document.getElementById('orderTable').querySelector('tbody');
-
-        if (!serviceType || orderAmount <= 0.01) {
-            alert('Please select a valid service type and enter a valid order amount.');
-            return;
-        }
-
-        let additionalInfo = '';
-        if (serviceType === 'bankTransferSaver' || serviceType === 'bankTransferExpress') {
-            additionalInfo = `
-                English Account: ${document.getElementById('englishAccount').value},
-                工商银行 Account: ${document.getElementById('gsyhAccount').value},
-                农业银行 Account: ${document.getElementById('nongyehAccount').value}
-            `;
-        } else if (serviceType === 'bankTransferUSD') {
-            additionalInfo = `Account Type: ${document.getElementById('accountType').value}`;
-        } else if (serviceType === 'alipay') {
-            additionalInfo = `
-                English Account: ${document.getElementById('englishAccount').value},
-                Chinese Account: ${document.getElementById('chineseAccount').value}
-            `;
-        } else {
-            additionalInfo = 'N/A';
-        }
-
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>${serviceType.replace(/([A-Z])/g, ' $1').trim()}</td>
-            <td>${orderAmount}</td>
-            <td>${additionalInfo}</td>
-            <td class="best-supplier">Calculating...</td>
+    // Add Amount Range
+    document.getElementById('add-amount-range-btn').addEventListener('click', () => {
+        const amountRangeItem = document.createElement('div');
+        amountRangeItem.classList.add('amount-range-item');
+        amountRangeItem.innerHTML = `
+            <input type="text" class="amount-range" placeholder="e.g. '> 0.01' or '10000 - 20000'" />
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
         `;
-        orderTable.appendChild(newRow);
+        document.getElementById('amount-limits-section').appendChild(amountRangeItem);
     });
 
-    document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
-        const rows = document.querySelectorAll('#orderTable tbody tr');
+    // Add Service Charge
+    document.getElementById('add-service-charge-btn').addEventListener('click', () => {
+        const serviceChargeItem = document.createElement('div');
+        serviceChargeItem.classList.add('service-charge-item');
+        serviceChargeItem.innerHTML = `
+            <div>
+                <label>Condition</label>
+                <input type="text" class="service-condition" placeholder="e.g. 'Company Account > 2000 USD'" />
+            </div>
+            <div>
+                <label>Charge</label>
+                <input type="text" class="service-charge" placeholder="e.g. 'CNY 50'" />
+            </div>
+            <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+        `;
+        document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+    });
 
-        if (rows.length === 0) {
-            alert('No orders to process.');
-            return;
+    // Add or Update Supplier
+    document.getElementById('add-supplier-btn').addEventListener('click', () => {
+        const name = document.getElementById('supplier-name').value;
+        const serviceType = document.getElementById('service-type').value;
+        const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
+        const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
+            return {
+                condition: item.querySelector('.service-condition').value,
+                charge: item.querySelector('.service-charge').value
+            };
+        });
+        const additionalQuestions = Array.from(document.querySelectorAll('#additional-questions-container .form-row')).map(row => {
+            const label = row.querySelector('label').textContent;
+            const value = row.querySelector('select').value;
+            return { label, value };
+        });
+        const isActive = document.getElementById('supplier-status').checked;
+
+        if (name && serviceType && amountLimits.length > 0) {
+            const supplierData = {
+                name,
+                isActive,
+                services: [{
+                    serviceType,
+                    amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
+                    serviceCharges,
+                    additionalQuestions
+                }]
+            };
+
+            if (editingSupplierIndex === -1) {
+                suppliers.push(supplierData);
+            } else {
+                suppliers[editingSupplierIndex] = supplierData;
+                editingSupplierIndex = -1;
+                document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
+            }
+
+            localStorage.setItem('suppliers', JSON.stringify(suppliers));
+            updateSupplierTables();
+            updateDailyRateSection();
+            clearSupplierForm();
         }
+    });
 
-        rows.forEach(row => {
-            const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
-            const orderAmount = parseFloat(row.cells[1].textContent.trim());
-            const additionalInfoCell = row.cells[2].textContent.trim();
-            let bestSupplier = null;
-            let lowestTotalCost = Infinity;
+    // Update Supplier Tables
+    function updateSupplierTables() {
+        const tables = {
+            'bank-express': document.getElementById('bank-express-table-body'),
+            'bank-saver': document.getElementById('bank-saver-table-body'),
+            'enterprise': document.getElementById('enterprise-table-body'),
+            'usd-transfer': document.getElementById('usd-transfer-table-body'),
+            'alipay': document.getElementById('alipay-table-body')
+        };
 
-            const additionalInfo = {};
-            additionalInfoCell.split(',').forEach(info => {
-                const [key, value] = info.split(':').map(s => s.trim());
-                additionalInfo[key.toLowerCase()] = value.toLowerCase();
-            });
+        Object.values(tables).forEach(table => table.innerHTML = '');
 
-            // Consider only active suppliers
-            suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
-                const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
-                if (service) {
-                    const amountLimit = service.amountLimits.find(a => {
-                        const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
-                        return orderAmount >= min && orderAmount <= max;
-                    });
+        suppliers.forEach((supplier, index) => {
+            supplier.services.forEach(service => {
+                const row = `
+                    <tr>
+                        <td>${supplier.name}</td>
+                        <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
+                        <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+                        <td>${service.additionalQuestions.map(q => `${q.label}: ${q.value}`).join(', ')}</td>
+                        <td>${supplier.isActive ? 'Active' : 'Inactive'}</td>
+                        <td>
+                            <button onclick="editSupplier(${index})">Edit</button>
+                            <button onclick="deleteSupplier(${index})">Delete</button>
+                        </td>
+                    </tr>
+                `;
 
-                    if (amountLimit && amountLimit.rate) {
-                        let convertedOrderAmount = 0;
-
-                        if (serviceTypeCell === 'usd transfer') {
-                            convertedOrderAmount = orderAmount * amountLimit.rate;
-                        } else {
-                            convertedOrderAmount = orderAmount / amountLimit.rate;
-                        }
-
-                        let totalCost = convertedOrderAmount;
-
-                        service.serviceCharges.forEach(charge => {
-                            if (evaluateCondition(charge.condition, orderAmount)) {
-                                const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
-                                totalCost += chargeAmount;
-                            }
-                        });
-
-                        if (totalCost < lowestTotalCost) {
-                            lowestTotalCost = totalCost;
-                            bestSupplier = supplier.name;
-                        }
-                    }
+                if (tables[service.serviceType]) {
+                    tables[service.serviceType].innerHTML += row;
                 }
             });
+        });
+    }
 
-            const bestSupplierCell = row.querySelector('.best-supplier');
-            bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
+    // Edit Supplier
+    function editSupplier(index) {
+        const supplier = suppliers[index];
+        document.getElementById('supplier-name').value = supplier.name;
+        document.getElementById('service-type').value = supplier.services[0].serviceType;
+        document.getElementById('supplier-status').checked = supplier.isActive;
+
+        document.getElementById('amount-limits-section').innerHTML = '';
+        supplier.services[0].amountLimits.forEach(range => {
+            const amountRangeItem = document.createElement('div');
+            amountRangeItem.classList.add('amount-range-item');
+            amountRangeItem.innerHTML = `
+                <input type="text" class="amount-range" value="${range.limit}" />
+                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+            `;
+            document.getElementById('amount-limits-section').appendChild(amountRangeItem);
         });
 
-        alert('Best supplier calculation completed.');
-    });
+        document.getElementById('service-charge-section').innerHTML = '';
+        supplier.services[0].serviceCharges.forEach(charge => {
+            const serviceChargeItem = document.createElement('div');
+            serviceChargeItem.classList.add('service-charge-item');
+            serviceChargeItem.innerHTML = `
+                <div>
+                    <label>Condition</label>
+                    <input type="text" class="service-condition" value="${charge.condition}" />
+                </div>
+                <div>
+                    <label>Charge</label>
+                    <input type="text" class="service-charge" value="${charge.charge}" />
+                </div>
+                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+            `;
+            document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+        });
 
-    // Sync suppliers to Google Sheet
-    const googleSheetApiUrl = ""; // Replace with your Google Sheets API URL
+        editingSupplierIndex = index;
+        document.getElementById('add-supplier-btn').textContent = 'Update Supplier';
+    }
 
-    document.getElementById('sync-suppliers-btn').addEventListener('click', async function () {
-        try {
-            const suppliersData = localStorage.getItem('suppliers');
-            if (!suppliersData) {
-                alert('No suppliers to sync.');
-                return;
-            }
+    // Remove Item (Amount Range or Service Charge)
+    function removeItem(button) {
+        const item = button.parentNode;
+        item.parentNode.removeChild(item);
+    }
 
-            const suppliers = JSON.parse(suppliersData);
+    // Clear Supplier Form
+    function clearSupplierForm() {
+        document.getElementById('supplier-name').value = '';
+        document.getElementById('service-type').value = '';
+        document.getElementById('amount-limits-section').innerHTML = '';
+        document.getElementById('service-charge-section').innerHTML = '';
+        document.getElementById('additional-questions-container').innerHTML = '';
+        document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
+        editingSupplierIndex = -1;
+    }
 
-            const formattedData = suppliers.map(supplier => {
-                return {
-                    name: supplier.name,
-                    isActive: supplier.isActive ? "Active" : "Inactive",
-                    services: supplier.services.map(service => ({
-                        serviceType: service.serviceType,
-                        amountLimits: service.amountLimits.map(a => a.limit).join(", "),
-                        serviceCharges: service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(", "),
-                        additionalQuestions: service.additionalQuestions.map(q => `${q.label}: ${q.value}`).join(", ")
-                    }))
-                };
-            });
-
-            const response = await fetch(googleSheetApiUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ suppliers: formattedData })
-            });
-
-            if (response.ok) {
-                alert('Suppliers successfully synced to Google Sheet!');
-            } else {
-                alert('Failed to sync suppliers. Check your Google Sheet API setup.');
-            }
-        } catch (error) {
-            console.error("Error syncing suppliers:", error);
-            alert('An error occurred while syncing suppliers.');
-        }
-    });
-
+    // Daily Rate Section
     function updateDailyRateSection() {
         const dailyRateSection = document.getElementById('daily-rate-section');
         dailyRateSection.innerHTML = '';
@@ -533,14 +494,207 @@ input:focus, select:focus {
                     const rateRow = document.createElement('div');
                     rateRow.classList.add('form-row');
                     rateRow.innerHTML = `
-                        <label>Amount Limit: ${limit} - Rate:</label>
-                        <input type="number" placeholder="Enter daily rate" data-supplier="${supplier.name}" data-service="${service.serviceType}" data-limit="${limit}">
+                        <label>Amount Limit: ${limit.limit} - Rate:</label>
+                        <input type="number" placeholder="Enter daily rate" data-supplier="${supplier.name}" data-service="${service.serviceType}" data-limit="${limit.limit}">
                     `;
                     dailyRateSection.appendChild(rateRow);
                 });
             });
         });
     }
+
+    function saveDailyRates() {
+        document.querySelectorAll('#daily-rate-section input').forEach(input => {
+            const supplierName = input.getAttribute('data-supplier');
+            const serviceType = input.getAttribute('data-service');
+            const limit = input.getAttribute('data-limit');
+            const rate = parseFloat(input.value);
+
+            const supplier = suppliers.find(s => s.name === supplierName);
+            if (supplier) {
+                const service = supplier.services.find(s => s.serviceType === serviceType);
+                if (service) {
+                    const amountLimit = service.amountLimits.find(a => a.limit === limit);
+                    if (amountLimit) {
+                        amountLimit.rate = rate;
+                    }
+                }
+            }
+        });
+
+        localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Store updated suppliers with rates
+    }
+
+// Add Order Functionality
+document.getElementById('createOrderBtn').addEventListener('click', function () {
+    const serviceType = document.getElementById('serviceType').value;
+    const orderAmount = parseFloat(document.getElementById('orderAmount').value);
+    const orderTable = document.getElementById('orderTable').querySelector('tbody');
+
+    if (!serviceType || orderAmount <= 0.01) {
+        alert('Please select a valid service type and enter a valid order amount.');
+        return;
+    }
+
+    let additionalInfo = '';
+    if (serviceType === 'bankTransferSaver' || serviceType === 'bankTransferExpress') {
+        additionalInfo = `
+            English Account: ${document.getElementById('englishAccount').value},
+            工商银行 Account: ${document.getElementById('gsyhAccount').value},
+            农业银行 Account: ${document.getElementById('nongyehAccount').value}
+        `;
+    } else if (serviceType === 'bankTransferUSD') {
+        additionalInfo = `Account Type: ${document.getElementById('accountType').value}`;
+    } else if (serviceType === 'alipay') {
+        additionalInfo = `
+            English Account: ${document.getElementById('englishAccount').value},
+            Chinese Account: ${document.getElementById('chineseAccount').value}
+        `;
+    } else {
+        additionalInfo = 'N/A';
+    }
+
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = `
+        <td>${serviceType.replace(/([A-Z])/g, ' $1').trim()}</td>
+        <td>${orderAmount.toFixed(2)}</td>
+        <td>${additionalInfo}</td>
+        <td class="best-supplier">Calculating...</td>
+    `;
+    orderTable.appendChild(newRow);
+});
+
+// Calculate Best Supplier
+document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
+    const rows = document.querySelectorAll('#orderTable tbody tr');
+
+    if (rows.length === 0) {
+        alert('No orders to process.');
+        return;
+    }
+
+    rows.forEach(row => {
+        const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
+        const orderAmount = parseFloat(row.cells[1].textContent.trim());
+        const additionalInfoCell = row.cells[2].textContent.trim();
+        let bestSupplier = null;
+        let lowestTotalCost = Infinity;
+
+        const additionalInfo = {};
+        additionalInfoCell.split(',').forEach(info => {
+            const [key, value] = info.split(':').map(s => s.trim());
+            additionalInfo[key.toLowerCase()] = value.toLowerCase();
+        });
+
+        // Consider only active suppliers
+        suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
+            const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
+            if (service) {
+                const amountLimit = service.amountLimits.find(a => {
+                    const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
+                    return orderAmount >= min && orderAmount <= max;
+                });
+
+                if (amountLimit && amountLimit.rate) {
+                    let convertedOrderAmount = 0;
+
+                    if (serviceTypeCell === 'usd transfer') {
+                        convertedOrderAmount = orderAmount * amountLimit.rate;
+                    } else {
+                        convertedOrderAmount = orderAmount / amountLimit.rate;
+                    }
+
+                    let totalCost = convertedOrderAmount;
+
+                    service.serviceCharges.forEach(charge => {
+                        if (evaluateCondition(charge.condition, orderAmount)) {
+                            const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
+                            totalCost += chargeAmount;
+                        }
+                    });
+
+                    if (totalCost < lowestTotalCost) {
+                        lowestTotalCost = totalCost;
+                        bestSupplier = supplier.name;
+                    }
+                }
+            }
+        });
+
+        const bestSupplierCell = row.querySelector('.best-supplier');
+        bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
+    });
+
+    alert('Best supplier calculation completed.');
+});
+
+// Utility Function to Evaluate Conditions
+function evaluateCondition(condition, amount) {
+    try {
+        if (!condition) return false;
+        condition = condition.toLowerCase();
+
+        if (condition.includes('>')) {
+            const value = parseFloat(condition.split('>')[1]);
+            return amount > value;
+        } else if (condition.includes('<')) {
+            const value = parseFloat(condition.split('<')[1]);
+            return amount < value;
+        } else if (condition.includes('-')) {
+            const [min, max] = condition.split('-').map(parseFloat);
+            return amount >= min && amount <= max;
+        }
+
+        return true;
+    } catch (e) {
+        console.error(`Error evaluating condition: ${condition}`, e);
+        return false;
+    }
+}
+
+    
+    // Sync Suppliers to Google Sheet
+    const googleSheetApiUrl = ""; // Add your Google Sheet API URL here
+
+    document.getElementById('sync-suppliers-btn').addEventListener('click', async function () {
+        try {
+            const suppliersData = localStorage.getItem('suppliers');
+            if (!suppliersData) {
+                alert('No suppliers to sync.');
+                return;
+            }
+
+            const suppliers = JSON.parse(suppliersData);
+
+            const formattedData = suppliers.map(supplier => ({
+                name: supplier.name,
+                isActive: supplier.isActive ? 'Active' : 'Inactive',
+                services: supplier.services.map(service => ({
+                    serviceType: service.serviceType,
+                    amountLimits: service.amountLimits.map(a => a.limit).join(', '),
+                    serviceCharges: service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', '),
+                    additionalQuestions: service.additionalQuestions.map(q => `${q.label}: ${q.value}`).join(', ')
+                }))
+            }));
+
+            const response = await fetch(googleSheetApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ suppliers: formattedData })
+            });
+
+            if (response.ok) {
+                alert('Suppliers successfully synced to Google Sheet!');
+            } else {
+                alert('Failed to sync suppliers. Check your Google Sheet API setup.');
+            }
+        } catch (error) {
+            console.error('Error syncing suppliers:', error);
+            alert('An error occurred while syncing suppliers.');
+        }
+    });
 </script>
 
 </body>
