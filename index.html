@@ -745,33 +745,45 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Calculate Best Supplier
-document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
-    const rows = document.querySelectorAll('#orderTable tbody tr');
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
+        const rows = document.querySelectorAll('#orderTable tbody tr');
 
-    if (rows.length === 0) {
-        alert('No orders to process.');
-        return;
-    }
+        // Debugging: Log the rows in the table
+        console.log('Order Rows:', rows);
 
-    rows.forEach(row => {
-        const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
-        const orderAmount = parseFloat(row.cells[1].textContent.trim());
-        const additionalInfoCell = row.cells[2].textContent.trim();
-        let bestSupplier = null;
-        let lowestTotalCost = Infinity;
+        if (rows.length === 0) {
+            alert('No orders to process.');
+            return;
+        }
 
-        // Parse additional info into a key-value map
-        const additionalInfo = {};
-        additionalInfoCell.split(',').forEach(info => {
-            const [key, value] = info.split(':').map(s => s.trim());
-            additionalInfo[key.toLowerCase()] = value.toLowerCase();
-        });
+        rows.forEach(row => {
+            console.log('Processing Row:', row);
 
-        // Consider only active suppliers
-        suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
-            // Find the service that matches the current order's service type
-            const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
-            if (service) {
+            const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
+            const orderAmount = parseFloat(row.cells[1].textContent.trim());
+            const additionalInfoCell = row.cells[2].textContent.trim();
+            let bestSupplier = null;
+            let lowestTotalCost = Infinity;
+
+            // Debugging: Log order details
+            console.log('Order Details:', { serviceTypeCell, orderAmount, additionalInfoCell });
+
+            // Parse additional info into a key-value map
+            const additionalInfo = {};
+            additionalInfoCell.split(',').forEach(info => {
+                const [key, value] = info.split(':').map(s => s.trim());
+                additionalInfo[key.toLowerCase()] = value.toLowerCase();
+            });
+
+            // Consider only active suppliers
+            suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
+                // Find the service that matches the current order's service type
+                const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
+                if (!service) return;
+
+                console.log(`Checking Supplier: ${supplier.name}, Service: ${service.serviceType}`);
+
                 // Check if the order amount satisfies the supplier's amount limits
                 const amountLimit = service.amountLimits.find(a => {
                     const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
@@ -788,74 +800,83 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
                 if (amountLimit && matchesAdditionalQuestions) {
                     // Fetch the supplier's daily rate for the service
                     const dailyRateInput = document.querySelector(
-                        input[data-supplier="${supplier.name}"][data-service="${service.serviceType}"]
+                        `input[data-supplier="${supplier.name}"][data-service="${service.serviceType}"]`
                     );
                     const dailyRate = dailyRateInput ? parseFloat(dailyRateInput.value) : null;
 
-                    if (dailyRate) {
+                    if (dailyRate && dailyRate > 0) {
                         // Calculate applicable service charges
                         const serviceCharge = calculateServiceCharge(orderAmount, service.serviceCharges);
 
                         // Calculate the effective total cost in RM
                         const totalCost = (orderAmount + serviceCharge) / dailyRate;
 
+                        // Debugging: Log calculated costs
+                        console.log(`Supplier: ${supplier.name}, Total Cost: ${totalCost}, Rate: ${dailyRate}, Service Charge: ${serviceCharge}`);
+
                         // Update the best supplier if this supplier offers a lower total cost
                         if (totalCost < lowestTotalCost) {
                             lowestTotalCost = totalCost;
                             bestSupplier = supplier.name;
                         }
+                    } else {
+                        console.error(`Invalid daily rate for supplier: ${supplier.name}`);
                     }
                 }
+            });
+
+            // Update the best supplier cell in the table row
+            const bestSupplierCell = row.querySelector('.best-supplier');
+            if (bestSupplierCell) {
+                bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
+            } else {
+                console.error('Best Supplier Cell not found for row:', row);
             }
         });
 
-        // Update the best supplier cell in the table row
-        const bestSupplierCell = row.querySelector('.best-supplier');
-        bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
+        alert('Best supplier calculation completed.');
     });
 
-    alert('Best supplier calculation completed.');
+    // Calculate service charges during order processing
+    function calculateServiceCharge(orderAmount, serviceCharges) {
+        let totalServiceCharge = 0;
+
+        serviceCharges.forEach(charge => {
+            const condition = charge.condition;
+            const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, '')); // Extract numeric value of charge
+            if (evaluateCondition(condition, orderAmount)) {
+                totalServiceCharge += chargeAmount;
+            }
+        });
+
+        return totalServiceCharge;
+    }
+
+    // Utility function to evaluate conditions (>, <, range) for service charges
+    function evaluateCondition(condition, amount) {
+        try {
+            if (!condition) return false;
+            condition = condition.toLowerCase();
+
+            if (condition.includes('>')) {
+                const value = parseFloat(condition.split('>')[1]);
+                return amount > value;
+            } else if (condition.includes('<')) {
+                const value = parseFloat(condition.split('<')[1]);
+                return amount < value;
+            } else if (condition.includes('-')) {
+                const [min, max] = condition.split('-').map(parseFloat);
+                return amount >= min && amount <= max;
+            }
+
+            return false;
+        } catch (error) {
+            console.error(`Error evaluating condition: ${condition}`, error);
+            return false;
+        }
+    }
 });
 
-// Calculate service charges during order processing
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('calculateBestSupplierBtn').addEventListener('click',
-    let totalServiceCharge = 0;
-
-    serviceCharges.forEach(charge => {
-        const condition = charge.condition;
-        const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, '')); // Extract numeric value of charge
-        if (evaluateCondition(condition, orderAmount)) {
-            totalServiceCharge += chargeAmount;
-        }
-    });
-
-    return totalServiceCharge;
-}
-
-// Utility function to evaluate conditions (>, <, range) for service charges
-function evaluateCondition(condition, amount) {
-    try {
-        if (!condition) return false;
-        condition = condition.toLowerCase();
-
-        if (condition.includes('>')) {
-            const value = parseFloat(condition.split('>')[1]);
-            return amount > value;
-        } else if (condition.includes('<')) {
-            const value = parseFloat(condition.split('<')[1]);
-            return amount < value;
-        } else if (condition.includes('-')) {
-            const [min, max] = condition.split('-').map(parseFloat);
-            return amount >= min && amount <= max;
-        }
-
-        return false;
-    } catch (error) {
-        console.error(Error evaluating condition: ${condition}, error);
-        return false;
-    }
-}
     // Sync Suppliers to Google Sheet
     const googleSheetApiUrl = ""; // Add your Google Sheet API URL here
 
