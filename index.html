@@ -328,16 +328,73 @@ document.getElementById('add-service-charge-btn').addEventListener('click', () =
     serviceChargeItem.innerHTML = `
         <div>
             <label>Condition</label>
-            <input type="text" class="service-condition" placeholder="e.g. 'Account Type: Company'" />
+            <input type="text" class="service-condition" placeholder="e.g. '> 50,000 CNY'" />
         </div>
         <div>
             <label>Charge</label>
-            <input type="text" class="service-charge" placeholder="e.g. 'CNY 50'" />
+            <input type="text" class="service-charge" placeholder="e.g. '50 CNY'" />
         </div>
         <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
         <div class="additional-questions-container"></div>
     `;
     document.getElementById('service-charge-section').appendChild(serviceChargeItem);
+});
+
+    // Evaluate service charge conditions during calculations
+function evaluateCondition(condition, orderAmount) {
+    try {
+        condition = condition.toLowerCase().trim();
+
+        // Parse numeric value from the condition
+        const match = condition.match(/([<>]=?)\s*([\d,]+)\s*cny/i);
+        if (!match) return false;
+
+        const operator = match[1]; // e.g., '>' or '<'
+        const value = parseFloat(match[2].replace(/,/g, '')); // Convert "50,000" to 50000
+
+        // Apply the operator logic
+        switch (operator) {
+            case '>':
+                return orderAmount > value;
+            case '<':
+                return orderAmount < value;
+            case '>=':
+                return orderAmount >= value;
+            case '<=':
+                return orderAmount <= value;
+            default:
+                return false;
+        }
+    } catch (error) {
+        console.error('Error evaluating condition:', error);
+        return false;
+    }
+}
+
+// Calculate service charges during order processing
+function calculateServiceCharge(orderAmount, serviceCharges) {
+    let totalServiceCharge = 0;
+
+    serviceCharges.forEach(charge => {
+        const condition = charge.condition;
+        const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, '')); // Extract numeric value of charge
+        if (evaluateCondition(condition, orderAmount)) {
+            totalServiceCharge += chargeAmount;
+        }
+    });
+
+    return totalServiceCharge;
+}
+
+// Example Usage:
+const serviceCharges = [
+    { condition: '> 50,000 CNY', charge: '50 CNY' },
+    { condition: '< 10,000 CNY', charge: '20 CNY' }
+];
+const orderAmount = 60000;
+
+console.log('Service Charge:', calculateServiceCharge(orderAmount, serviceCharges)); // Output: 50
+
 
     // Add dynamic additional questions logic
     const conditionInput = serviceChargeItem.querySelector('.service-condition');
@@ -354,28 +411,41 @@ function handleAdditionalQuestions(inputElement) {
     // Clear existing additional questions
     questionsContainer.innerHTML = '';
 
-    // Define additional questions for specific conditions
+    // Define additional questions for each service type condition
     const additionalQuestionsMap = {
-        'account type: company': [
-            { label: 'Company Tax ID', type: 'text', placeholder: 'Enter Tax ID' },
-            { label: 'Business License', type: 'file' }
+        'bank transfer saver': [
+            { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+            { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+            { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
         ],
-        'large transfer': [
-            { label: 'Approval Document', type: 'file' }
+        'bank transfer express': [
+            { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+            { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+            { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
+        ],
+        'bank transfer usd': [
+            { label: 'Account Type', type: 'select', options: ['Personal', 'Company'] }
+        ],
+        'alipay': [
+            { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+            { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
         ]
     };
 
-    // Check if the condition matches any in the map
-    if (additionalQuestionsMap[condition]) {
-        additionalQuestionsMap[condition].forEach(question => {
+    // Match the condition to a service type
+    const matchedQuestions = Object.entries(additionalQuestionsMap).find(([key]) => condition.includes(key));
+
+    // If a match is found, render its additional questions
+    if (matchedQuestions) {
+        matchedQuestions[1].forEach(question => {
             const questionDiv = document.createElement('div');
             questionDiv.classList.add('form-group');
             questionDiv.innerHTML = `
                 <label>${question.label}</label>
                 ${
-                    question.type === 'file'
-                        ? `<input type="file" />`
-                        : `<input type="${question.type}" placeholder="${question.placeholder}" />`
+                    question.type === 'select'
+                        ? `<select>${question.options.map(option => `<option value="${option.toLowerCase()}">${option}</option>`).join('')}</select>`
+                        : `<input type="${question.type}" placeholder="${question.placeholder || ''}" />`
                 }
             `;
             questionsContainer.appendChild(questionDiv);
@@ -640,6 +710,7 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
         let bestSupplier = null;
         let lowestTotalCost = Infinity;
 
+        // Parse additional info into a key-value map
         const additionalInfo = {};
         additionalInfoCell.split(',').forEach(info => {
             const [key, value] = info.split(':').map(s => s.trim());
@@ -648,39 +719,47 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
 
         // Consider only active suppliers
         suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
+            // Find the service that matches the current order's service type
             const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
             if (service) {
+                // Check if the order amount satisfies the supplier's amount limits
                 const amountLimit = service.amountLimits.find(a => {
                     const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
                     return orderAmount >= min && orderAmount <= max;
                 });
 
-                if (amountLimit && amountLimit.rate) {
-                    let convertedOrderAmount = 0;
+                // Validate the supplier's additional questions
+                const matchesAdditionalQuestions = service.additionalQuestions.every(question => {
+                    const questionKey = question.label.toLowerCase();
+                    const expectedValue = question.value.toLowerCase();
+                    return additionalInfo[questionKey] === expectedValue;
+                });
 
-                    if (serviceTypeCell === 'usd transfer') {
-                        convertedOrderAmount = orderAmount * amountLimit.rate;
-                    } else {
-                        convertedOrderAmount = orderAmount / amountLimit.rate;
-                    }
+                if (amountLimit && matchesAdditionalQuestions) {
+                    // Fetch the supplier's daily rate for the service
+                    const dailyRateInput = document.querySelector(
+                        `input[data-supplier="${supplier.name}"][data-service="${service.serviceType}"]`
+                    );
+                    const dailyRate = dailyRateInput ? parseFloat(dailyRateInput.value) : null;
 
-                    let totalCost = convertedOrderAmount;
+                    if (dailyRate) {
+                        // Calculate applicable service charges
+                        const serviceCharge = calculateServiceCharge(orderAmount, service.serviceCharges);
 
-                    service.serviceCharges.forEach(charge => {
-                        if (evaluateCondition(charge.condition, orderAmount)) {
-                            const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
-                            totalCost += chargeAmount;
+                        // Calculate the effective total cost in RM
+                        const totalCost = (orderAmount + serviceCharge) / dailyRate;
+
+                        // Update the best supplier if this supplier offers a lower total cost
+                        if (totalCost < lowestTotalCost) {
+                            lowestTotalCost = totalCost;
+                            bestSupplier = supplier.name;
                         }
-                    });
-
-                    if (totalCost < lowestTotalCost) {
-                        lowestTotalCost = totalCost;
-                        bestSupplier = supplier.name;
                     }
                 }
             }
         });
 
+        // Update the best supplier cell in the table row
         const bestSupplierCell = row.querySelector('.best-supplier');
         bestSupplierCell.textContent = bestSupplier ? bestSupplier : 'No suitable supplier found';
     });
@@ -688,7 +767,22 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
     alert('Best supplier calculation completed.');
 });
 
-// Utility Function to Evaluate Conditions
+// Calculate service charges during order processing
+function calculateServiceCharge(orderAmount, serviceCharges) {
+    let totalServiceCharge = 0;
+
+    serviceCharges.forEach(charge => {
+        const condition = charge.condition;
+        const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, '')); // Extract numeric value of charge
+        if (evaluateCondition(condition, orderAmount)) {
+            totalServiceCharge += chargeAmount;
+        }
+    });
+
+    return totalServiceCharge;
+}
+
+// Utility function to evaluate conditions (>, <, range) for service charges
 function evaluateCondition(condition, amount) {
     try {
         if (!condition) return false;
@@ -705,14 +799,13 @@ function evaluateCondition(condition, amount) {
             return amount >= min && amount <= max;
         }
 
-        return true;
-    } catch (e) {
-        console.error(`Error evaluating condition: ${condition}`, e);
+        return false;
+    } catch (error) {
+        console.error(`Error evaluating condition: ${condition}`, error);
         return false;
     }
 }
 
-    
     // Sync Suppliers to Google Sheet
     const googleSheetApiUrl = ""; // Add your Google Sheet API URL here
 
