@@ -207,6 +207,7 @@ input:focus, select:focus {
 
     <h3>Supplier Information</h3>
     <button id="sync-suppliers-btn" class="btn">Sync Suppliers to Google Sheet</button>
+    <button id="fetch-suppliers-btn" class="btn">Fetch Suppliers from Google Sheets</button>
     <div class="tabs" id="service-tabs">
         <div class="tab" data-service="bank-express">Bank Transfer (Express)</div>
         <div class="tab" data-service="bank-saver">Bank Transfer (Saver)</div>
@@ -695,6 +696,47 @@ function evaluateCondition(condition, amount) {
             alert('An error occurred while syncing suppliers.');
         }
     });
+
+    async function fetchSuppliersFromGoogleSheet() {
+    try {
+        const googleSheetApiUrl = ""; // Replace with your Google Sheets API URL
+        const response = await fetch(googleSheetApiUrl);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch data from Google Sheets.');
+        }
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            const suppliersFromSheet = data.data;
+
+            // Transform data into the format your system uses
+            const transformedSuppliers = suppliersFromSheet.map(sheetSupplier => ({
+                name: sheetSupplier["Name"], // Replace with the actual column names
+                isActive: sheetSupplier["Status"] === "Active",
+                services: JSON.parse(sheetSupplier["Services"]), // Assumes JSON strings for services
+            }));
+
+            // Save to localStorage
+            localStorage.setItem('suppliers', JSON.stringify(transformedSuppliers));
+            suppliers = transformedSuppliers;
+            updateSupplierTables();
+            updateDailyRateSection();
+
+            alert('Suppliers successfully fetched and loaded from Google Sheets!');
+        } else {
+            throw new Error(data.message || 'Unknown error occurred.');
+        }
+    } catch (error) {
+        console.error('Error fetching suppliers:', error);
+        alert('An error occurred while fetching suppliers from Google Sheets.');
+    }
+}
+
+// Button to trigger fetch
+document.getElementById('fetch-suppliers-btn').addEventListener('click', fetchSuppliersFromGoogleSheet);
+
 </script>
 
 </body>
