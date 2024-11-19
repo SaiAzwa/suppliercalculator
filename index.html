@@ -306,15 +306,16 @@ window.addEventListener('load', function () {
 
 // Toggle Supplier Management Section
 document.addEventListener('DOMContentLoaded', function () {
-document.getElementById('toggleManagementBtn').addEventListener('click', function () {
-    const section = document.getElementById('supplierManagementSection');
-    section.classList.toggle('hidden');
-    this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
+    document.getElementById('toggleManagementBtn').addEventListener('click', function () {
+        const section = document.getElementById('supplierManagementSection');
+        section.classList.toggle('hidden');
+        this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
+    });
 });
 
 // Add Amount Range
 document.addEventListener('DOMContentLoaded', function () {
-document.getElementById('add-amount-range-btn').addEventListener('click', () => {
+  document.getElementById('add-amount-range-btn').addEventListener('click', () => {
     const amountRangeItem = document.createElement('div');
     amountRangeItem.classList.add('amount-range-item');
     amountRangeItem.innerHTML = `
@@ -322,6 +323,7 @@ document.getElementById('add-amount-range-btn').addEventListener('click', () => 
         <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
     `;
     document.getElementById('amount-limits-section').appendChild(amountRangeItem);
+  });
 });
 
 // Add Service Charge
@@ -459,7 +461,7 @@ function handleAdditionalQuestions(inputElement) {
 
 // Add or Update Supplier
 document.addEventListener('DOMContentLoaded', function () {
-document.getElementById('add-supplier-btn').addEventListener('click', () => {
+  document.getElementById('add-supplier-btn').addEventListener('click', () => {
     const name = document.getElementById('supplier-name').value;
     const serviceType = document.getElementById('service-type').value;
     const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
@@ -503,6 +505,7 @@ document.getElementById('add-supplier-btn').addEventListener('click', () => {
         updateDailyRateSection();
         clearSupplierForm();
     }
+  });
 });
 
 // Update Supplier Tables
@@ -924,6 +927,7 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('An error occurred while syncing suppliers.');
         }
     });
+  });
 
     async function fetchSuppliersFromGoogleSheet() {
     try {
@@ -965,7 +969,8 @@ document.addEventListener('DOMContentLoaded', function () {
 // Button to trigger fetch
 document.addEventListener('DOMContentLoaded', function () {
 document.getElementById('fetch-suppliers-btn').addEventListener('click', fetchSuppliersFromGoogleSheet);
-    
+});
+
 </script>
 </body>
 </html>
