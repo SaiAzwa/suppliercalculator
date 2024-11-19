@@ -304,16 +304,16 @@ window.addEventListener('load', function () {
     }
 });
 
-document.addEventListener('DOMContentLoaded', function () {
 // Toggle Supplier Management Section
+document.addEventListener('DOMContentLoaded', function () {
 document.getElementById('toggleManagementBtn').addEventListener('click', function () {
     const section = document.getElementById('supplierManagementSection');
     section.classList.toggle('hidden');
     this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
 });
 
-document.addEventListener('DOMContentLoaded', function () {
 // Add Amount Range
+document.addEventListener('DOMContentLoaded', function () {
 document.getElementById('add-amount-range-btn').addEventListener('click', () => {
     const amountRangeItem = document.createElement('div');
     amountRangeItem.classList.add('amount-range-item');
@@ -324,8 +324,8 @@ document.getElementById('add-amount-range-btn').addEventListener('click', () => 
     document.getElementById('amount-limits-section').appendChild(amountRangeItem);
 });
 
-document.addEventListener('DOMContentLoaded', function () {
 // Add Service Charge
+document.addEventListener('DOMContentLoaded', function () {
 document.getElementById('add-service-charge-btn').addEventListener('click', () => {
     const serviceChargeItem = document.createElement('div');
     serviceChargeItem.classList.add('service-charge-item');
@@ -344,7 +344,7 @@ document.getElementById('add-service-charge-btn').addEventListener('click', () =
     document.getElementById('service-charge-section').appendChild(serviceChargeItem);
 });
 
-    // Evaluate service charge conditions during calculations
+// Evaluate service charge conditions during calculations
 function evaluateCondition(condition, orderAmount) {
     try {
         condition = condition.toLowerCase().trim();
@@ -457,8 +457,8 @@ function handleAdditionalQuestions(inputElement) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
 // Add or Update Supplier
+document.addEventListener('DOMContentLoaded', function () {
 document.getElementById('add-supplier-btn').addEventListener('click', () => {
     const name = document.getElementById('supplier-name').value;
     const serviceType = document.getElementById('service-type').value;
@@ -660,8 +660,8 @@ function clearSupplierForm() {
         localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Store updated suppliers with rates
     }
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Add Order Functionality
+     // Add Order Functionality
+    document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('createOrderBtn').addEventListener('click', function () {
         const serviceType = document.getElementById('serviceType')?.value;
         const orderAmount = parseFloat(document.getElementById('orderAmount')?.value);
@@ -884,6 +884,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Sync Suppliers to Google Sheet
     const googleSheetApiUrl = ""; // Add your Google Sheet API URL here
 
+    document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('sync-suppliers-btn').addEventListener('click', async function () {
         try {
             const suppliersData = localStorage.getItem('suppliers');
@@ -962,6 +963,7 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 
 // Button to trigger fetch
+document.addEventListener('DOMContentLoaded', function () {
 document.getElementById('fetch-suppliers-btn').addEventListener('click', fetchSuppliersFromGoogleSheet);
 
 </script>
