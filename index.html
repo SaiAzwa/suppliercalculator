@@ -460,6 +460,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Add an event listener for service type selection
+    const serviceTypeElement = document.getElementById('serviceType');
+    if (serviceTypeElement) {
+        serviceTypeElement.addEventListener('change', function() {
+            const selectedServiceType = this.value;
+            handleAdditionalQuestionsBasedOnService(selectedServiceType);
+        });
+    }
+});
+
+
 // Add or Update Supplier
 document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('add-supplier-btn').addEventListener('click', () => {
