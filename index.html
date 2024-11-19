@@ -289,8 +289,9 @@ input:focus, select:focus {
         </div>
     </div>
 </div>
+
 <script>
-    let suppliers = [];
+let suppliers = [];
 let editingSupplierIndex = -1;
 
 // Load suppliers from localStorage on page load
@@ -340,7 +341,7 @@ document.getElementById('add-service-charge-btn').addEventListener('click', () =
     document.getElementById('service-charge-section').appendChild(serviceChargeItem);
 });
 
-    // Evaluate service charge conditions during calculations
+// Evaluate service charge conditions during calculations
 function evaluateCondition(condition, orderAmount) {
     try {
         condition = condition.toLowerCase().trim();
@@ -385,23 +386,6 @@ function calculateServiceCharge(orderAmount, serviceCharges) {
 
     return totalServiceCharge;
 }
-
-// Example Usage:
-const serviceCharges = [
-    { condition: '> 50,000 CNY', charge: '50 CNY' },
-    { condition: '< 10,000 CNY', charge: '20 CNY' }
-];
-const orderAmount = 60000;
-
-console.log('Service Charge:', calculateServiceCharge(orderAmount, serviceCharges)); // Output: 50
-
-
-    // Add dynamic additional questions logic
-    const conditionInput = serviceChargeItem.querySelector('.service-condition');
-    conditionInput.addEventListener('input', function () {
-        handleAdditionalQuestions(this);
-    });
-});
 
 // Handle Additional Questions Based on Service Charges
 function handleAdditionalQuestions(inputElement) {
@@ -466,7 +450,7 @@ document.getElementById('add-supplier-btn').addEventListener('click', () => {
         const additionalQuestions = Array.from(item.querySelectorAll('.additional-questions-container .form-group')).map(group => {
             const label = group.querySelector('label').textContent;
             const valueInput = group.querySelector('input');
-            const value = valueInput.type === 'file' ? valueInput.files[0]?.name || 'File not uploaded' : valueInput.value;
+            const value = valueInput ? valueInput.value : group.querySelector('select').value;
             return { label, value };
         });
 
@@ -519,7 +503,7 @@ function updateSupplierTables() {
                     <td>${supplier.name}</td>
                     <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
                     <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-                    <td>${service.additionalQuestions.map(q => `${q.label}: ${q.value}`).join(', ')}</td>
+                    <td>${service.serviceCharges.flatMap(sc => sc.additionalQuestions).map(q => `${q.label}: ${q.value}`).join(', ')}</td>
                     <td>${supplier.isActive ? 'Active' : 'Inactive'}</td>
                     <td>
                         <button onclick="editSupplier(${index})">Edit</button>
@@ -600,60 +584,59 @@ function clearSupplierForm() {
     document.getElementById('service-type').value = '';
     document.getElementById('amount-limits-section').innerHTML = '';
     document.getElementById('service-charge-section').innerHTML = '';
-    document.getElementById('additional-questions-container').innerHTML = '';
     document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
     editingSupplierIndex = -1;
 }
 
-    // Daily Rate Section
-    function updateDailyRateSection() {
-        const dailyRateSection = document.getElementById('daily-rate-section');
-        dailyRateSection.innerHTML = '';
+// Daily Rate Section
+function updateDailyRateSection() {
+    const dailyRateSection = document.getElementById('daily-rate-section');
+    dailyRateSection.innerHTML = '';
 
-        suppliers.forEach(supplier => {
-            const supplierHeader = document.createElement('h4');
-            supplierHeader.textContent = `Supplier: ${supplier.name}`;
-            dailyRateSection.appendChild(supplierHeader);
+    suppliers.forEach(supplier => {
+        const supplierHeader = document.createElement('h4');
+        supplierHeader.textContent = `Supplier: ${supplier.name}`;
+        dailyRateSection.appendChild(supplierHeader);
 
-            supplier.services.forEach(service => {
-                const serviceHeader = document.createElement('h5');
-                serviceHeader.textContent = `Service: ${service.serviceType.replace(/-/g, ' ')}`;
-                dailyRateSection.appendChild(serviceHeader);
+        supplier.services.forEach(service => {
+            const serviceHeader = document.createElement('h5');
+            serviceHeader.textContent = `Service: ${service.serviceType.replace(/-/g, ' ')}`;
+            dailyRateSection.appendChild(serviceHeader);
 
-                service.amountLimits.forEach(limit => {
-                    const rateRow = document.createElement('div');
-                    rateRow.classList.add('form-row');
-                    rateRow.innerHTML = `
-                        <label>Amount Limit: ${limit.limit} - Rate:</label>
-                        <input type="number" placeholder="Enter daily rate" data-supplier="${supplier.name}" data-service="${service.serviceType}" data-limit="${limit.limit}">
-                    `;
-                    dailyRateSection.appendChild(rateRow);
-                });
+            service.amountLimits.forEach(limit => {
+                const rateRow = document.createElement('div');
+                rateRow.classList.add('form-row');
+                rateRow.innerHTML = `
+                    <label>Amount Limit: ${limit.limit} - Rate:</label>
+                    <input type="number" placeholder="Enter daily rate" data-supplier="${supplier.name}" data-service="${service.serviceType}" data-limit="${limit.limit}">
+                `;
+                dailyRateSection.appendChild(rateRow);
             });
         });
-    }
+    });
+}
 
-    function saveDailyRates() {
-        document.querySelectorAll('#daily-rate-section input').forEach(input => {
-            const supplierName = input.getAttribute('data-supplier');
-            const serviceType = input.getAttribute('data-service');
-            const limit = input.getAttribute('data-limit');
-            const rate = parseFloat(input.value);
+function saveDailyRates() {
+    document.querySelectorAll('#daily-rate-section input').forEach(input => {
+        const supplierName = input.getAttribute('data-supplier');
+        const serviceType = input.getAttribute('data-service');
+        const limit = input.getAttribute('data-limit');
+        const rate = parseFloat(input.value);
 
-            const supplier = suppliers.find(s => s.name === supplierName);
-            if (supplier) {
-                const service = supplier.services.find(s => s.serviceType === serviceType);
-                if (service) {
-                    const amountLimit = service.amountLimits.find(a => a.limit === limit);
-                    if (amountLimit) {
-                        amountLimit.rate = rate;
-                    }
+        const supplier = suppliers.find(s => s.name === supplierName);
+        if (supplier) {
+            const service = supplier.services.find(s => s.serviceType === serviceType);
+            if (service) {
+                const amountLimit = service.amountLimits.find(a => a.limit === limit);
+                if (amountLimit) {
+                    amountLimit.rate = rate;
                 }
             }
-        });
+        }
+    });
 
-        localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Store updated suppliers with rates
-    }
+    localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Store updated suppliers with rates
+}
 
 // Add Order Functionality
 document.getElementById('createOrderBtn').addEventListener('click', function () {
@@ -729,7 +712,7 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
                 });
 
                 // Validate the supplier's additional questions
-                const matchesAdditionalQuestions = service.additionalQuestions.every(question => {
+                const matchesAdditionalQuestions = service.serviceCharges.flatMap(sc => sc.additionalQuestions).every(question => {
                     const questionKey = question.label.toLowerCase();
                     const expectedValue = question.value.toLowerCase();
                     return additionalInfo[questionKey] === expectedValue;
@@ -767,89 +750,50 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
     alert('Best supplier calculation completed.');
 });
 
-// Calculate service charges during order processing
-function calculateServiceCharge(orderAmount, serviceCharges) {
-    let totalServiceCharge = 0;
+// Sync Suppliers to Google Sheet
+const googleSheetApiUrl = ""; // Add your Google Sheet API URL here
 
-    serviceCharges.forEach(charge => {
-        const condition = charge.condition;
-        const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, '')); // Extract numeric value of charge
-        if (evaluateCondition(condition, orderAmount)) {
-            totalServiceCharge += chargeAmount;
-        }
-    });
-
-    return totalServiceCharge;
-}
-
-// Utility function to evaluate conditions (>, <, range) for service charges
-function evaluateCondition(condition, amount) {
+document.getElementById('sync-suppliers-btn').addEventListener('click', async function () {
     try {
-        if (!condition) return false;
-        condition = condition.toLowerCase();
-
-        if (condition.includes('>')) {
-            const value = parseFloat(condition.split('>')[1]);
-            return amount > value;
-        } else if (condition.includes('<')) {
-            const value = parseFloat(condition.split('<')[1]);
-            return amount < value;
-        } else if (condition.includes('-')) {
-            const [min, max] = condition.split('-').map(parseFloat);
-            return amount >= min && amount <= max;
+        const suppliersData = localStorage.getItem('suppliers');
+        if (!suppliersData) {
+            alert('No suppliers to sync.');
+            return;
         }
 
-        return false;
+        const suppliers = JSON.parse(suppliersData);
+
+        const formattedData = suppliers.map(supplier => ({
+            name: supplier.name,
+            isActive: supplier.isActive ? 'Active' : 'Inactive',
+            services: supplier.services.map(service => ({
+                serviceType: service.serviceType,
+                amountLimits: service.amountLimits.map(a => a.limit).join(', '),
+                serviceCharges: service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', '),
+                additionalQuestions: service.serviceCharges.flatMap(sc => sc.additionalQuestions).map(q => `${q.label}: ${q.value}`).join(', ')
+            }))
+        }));
+
+        const response = await fetch(googleSheetApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ suppliers: formattedData })
+        });
+
+        if (response.ok) {
+            alert('Suppliers successfully synced to Google Sheet!');
+        } else {
+            alert('Failed to sync suppliers. Check your Google Sheet API setup.');
+        }
     } catch (error) {
-        console.error(`Error evaluating condition: ${condition}`, error);
-        return false;
+        console.error('Error syncing suppliers:', error);
+        alert('An error occurred while syncing suppliers.');
     }
-}
+});
 
-    // Sync Suppliers to Google Sheet
-    const googleSheetApiUrl = ""; // Add your Google Sheet API URL here
-
-    document.getElementById('sync-suppliers-btn').addEventListener('click', async function () {
-        try {
-            const suppliersData = localStorage.getItem('suppliers');
-            if (!suppliersData) {
-                alert('No suppliers to sync.');
-                return;
-            }
-
-            const suppliers = JSON.parse(suppliersData);
-
-            const formattedData = suppliers.map(supplier => ({
-                name: supplier.name,
-                isActive: supplier.isActive ? 'Active' : 'Inactive',
-                services: supplier.services.map(service => ({
-                    serviceType: service.serviceType,
-                    amountLimits: service.amountLimits.map(a => a.limit).join(', '),
-                    serviceCharges: service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', '),
-                    additionalQuestions: service.additionalQuestions.map(q => `${q.label}: ${q.value}`).join(', ')
-                }))
-            }));
-
-            const response = await fetch(googleSheetApiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ suppliers: formattedData })
-            });
-
-            if (response.ok) {
-                alert('Suppliers successfully synced to Google Sheet!');
-            } else {
-                alert('Failed to sync suppliers. Check your Google Sheet API setup.');
-            }
-        } catch (error) {
-            console.error('Error syncing suppliers:', error);
-            alert('An error occurred while syncing suppliers.');
-        }
-    });
-
-    async function fetchSuppliersFromGoogleSheet() {
+async function fetchSuppliersFromGoogleSheet() {
     try {
         const googleSheetApiUrl = ""; // Replace with your Google Sheets API URL
         const response = await fetch(googleSheetApiUrl);
@@ -867,7 +811,7 @@ function evaluateCondition(condition, amount) {
             const transformedSuppliers = suppliersFromSheet.map(sheetSupplier => ({
                 name: sheetSupplier["Name"], // Replace with the actual column names
                 isActive: sheetSupplier["Status"] === "Active",
-                services: JSON.parse(sheetSupplier["Services"]), // Assumes JSON strings for services
+                services: JSON.parse(sheetSupplier["Services"]) // Assumes JSON strings for services
             }));
 
             // Save to localStorage
