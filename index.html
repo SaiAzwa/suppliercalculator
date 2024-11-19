@@ -409,55 +409,56 @@ console.log('Service Charge:', calculateServiceCharge(orderAmount, serviceCharge
     });
 });
 
-// Handle Additional Questions Based on Service Charges
-function handleAdditionalQuestions(inputElement) {
-    const condition = inputElement.value.toLowerCase();
-    const questionsContainer = inputElement.closest('.service-charge-item').querySelector('.additional-questions-container');
+// Handle additional questions
+document.addEventListener('DOMContentLoaded', function () {
+    // Handle Additional Questions Based on Service Type
+    function handleAdditionalQuestionsBasedOnService(serviceType) {
+        const questionsContainer = document.getElementById('additionalQuestions');
+        
+        // Clear existing additional questions
+        questionsContainer.innerHTML = '';
 
-    // Clear existing additional questions
-    questionsContainer.innerHTML = '';
+        // Define additional questions for each service type
+        const additionalQuestionsMap = {
+            'bankTransferSaver': [
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
+            ],
+            'bankTransferExpress': [
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
+            ],
+            'bankTransferUSD': [
+                { label: 'Account Type', type: 'select', options: ['Personal', 'Company'] }
+            ],
+            'alipay': [
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
+            ]
+        };
 
-    // Define additional questions for each service type condition
-    const additionalQuestionsMap = {
-        'bank transfer saver': [
-            { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
-            { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
-            { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
-        ],
-        'bank transfer express': [
-            { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
-            { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
-            { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
-        ],
-        'bank transfer usd': [
-            { label: 'Account Type', type: 'select', options: ['Personal', 'Company'] }
-        ],
-        'alipay': [
-            { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
-            { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
-        ]
-    };
+        // Match the selected service type to additional questions
+        const questions = additionalQuestionsMap[serviceType];
 
-    // Match the condition to a service type
-    const matchedQuestions = Object.entries(additionalQuestionsMap).find(([key]) => condition.includes(key));
-
-    // If a match is found, render its additional questions
-    if (matchedQuestions) {
-        matchedQuestions[1].forEach(question => {
-            const questionDiv = document.createElement('div');
-            questionDiv.classList.add('form-group');
-            questionDiv.innerHTML = `
-                <label>${question.label}</label>
-                ${
-                    question.type === 'select'
-                        ? `<select>${question.options.map(option => `<option value="${option.toLowerCase()}">${option}</option>`).join('')}</select>`
-                        : `<input type="${question.type}" placeholder="${question.placeholder || ''}" />`
-                }
-            `;
-            questionsContainer.appendChild(questionDiv);
-        });
+        // Render the questions if they exist
+        if (questions) {
+            questions.forEach(question => {
+                const questionDiv = document.createElement('div');
+                questionDiv.classList.add('form-group');
+                questionDiv.innerHTML = `
+                    <label>${question.label}</label>
+                    ${
+                        question.type === 'select'
+                            ? `<select>${question.options.map(option => `<option value="${option.toLowerCase()}">${option}</option>`).join('')}</select>`
+                            : `<input type="${question.type}" placeholder="${question.placeholder || ''}" />`
+                    }
+                `;
+                questionsContainer.appendChild(questionDiv);
+            });
+        }
     }
-}
 
 // Add or Update Supplier
 document.addEventListener('DOMContentLoaded', function () {
