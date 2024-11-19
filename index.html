@@ -656,44 +656,92 @@ function clearSupplierForm() {
         localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Store updated suppliers with rates
     }
 
-// Add Order Functionality
 document.addEventListener('DOMContentLoaded', function () {
-document.getElementById('createOrderBtn').addEventListener('click', function () {
-    const serviceType = document.getElementById('serviceType').value;
-    const orderAmount = parseFloat(document.getElementById('orderAmount').value);
-    const orderTable = document.getElementById('orderTable').querySelector('tbody');
+    // Add Order Functionality
+    document.getElementById('createOrderBtn').addEventListener('click', function () {
+        const serviceType = document.getElementById('serviceType')?.value;
+        const orderAmount = parseFloat(document.getElementById('orderAmount')?.value);
+        const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
 
-    if (!serviceType || orderAmount <= 0.01) {
-        alert('Please select a valid service type and enter a valid order amount.');
-        return;
-    }
+        // Validate inputs
+        if (!serviceType || orderAmount <= 0.01) {
+            alert('Please select a valid service type and enter a valid order amount.');
+            return;
+        }
 
-    let additionalInfo = '';
-    if (serviceType === 'bankTransferSaver' || serviceType === 'bankTransferExpress') {
-        additionalInfo = `
-            English Account: ${document.getElementById('englishAccount').value},
-            工商银行 Account: ${document.getElementById('gsyhAccount').value},
-            农业银行 Account: ${document.getElementById('nongyehAccount').value}
+        // Debugging: Log basic inputs
+        console.log('Service Type:', serviceType);
+        console.log('Order Amount:', orderAmount);
+
+        // Collect additional info based on service type
+        let additionalInfo = '';
+        if (serviceType === 'bankTransferSaver' || serviceType === 'bankTransferExpress') {
+            const englishAccount = document.getElementById('englishAccount')?.value;
+            const gsyhAccount = document.getElementById('gsyhAccount')?.value;
+            const nongyehAccount = document.getElementById('nongyehAccount')?.value;
+
+            if (!englishAccount || !gsyhAccount || !nongyehAccount) {
+                alert('Please complete all required additional fields.');
+                return;
+            }
+
+            additionalInfo = `
+                English Account: ${englishAccount},
+                工商银行 Account: ${gsyhAccount},
+                农业银行 Account: ${nongyehAccount}
+            `;
+
+            // Debugging: Log additional info for this service type
+            console.log('Additional Info (Bank Transfer Saver/Express):', additionalInfo);
+        } else if (serviceType === 'bankTransferUSD') {
+            const accountType = document.getElementById('accountType')?.value;
+
+            if (!accountType) {
+                alert('Please select an Account Type.');
+                return;
+            }
+
+            additionalInfo = `Account Type: ${accountType}`;
+
+            // Debugging: Log additional info for USD transfers
+            console.log('Additional Info (Bank Transfer USD):', additionalInfo);
+        } else if (serviceType === 'alipay') {
+            const englishAccount = document.getElementById('englishAccount')?.value;
+            const chineseAccount = document.getElementById('chineseAccount')?.value;
+
+            if (!englishAccount || !chineseAccount) {
+                alert('Please complete all required additional fields.');
+                return;
+            }
+
+            additionalInfo = `
+                English Account: ${englishAccount},
+                Chinese Account: ${chineseAccount}
+            `;
+
+            // Debugging: Log additional info for Alipay
+            console.log('Additional Info (Alipay):', additionalInfo);
+        } else {
+            additionalInfo = 'N/A';
+        }
+
+        // Create and append the new row to the order table
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${serviceType.replace(/([A-Z])/g, ' $1').trim()}</td>
+            <td>${orderAmount.toFixed(2)}</td>
+            <td>${additionalInfo}</td>
+            <td class="best-supplier">Calculating...</td>
         `;
-    } else if (serviceType === 'bankTransferUSD') {
-        additionalInfo = `Account Type: ${document.getElementById('accountType').value}`;
-    } else if (serviceType === 'alipay') {
-        additionalInfo = `
-            English Account: ${document.getElementById('englishAccount').value},
-            Chinese Account: ${document.getElementById('chineseAccount').value}
-        `;
-    } else {
-        additionalInfo = 'N/A';
-    }
 
-    const newRow = document.createElement('tr');
-    newRow.innerHTML = `
-        <td>${serviceType.replace(/([A-Z])/g, ' $1').trim()}</td>
-        <td>${orderAmount.toFixed(2)}</td>
-        <td>${additionalInfo}</td>
-        <td class="best-supplier">Calculating...</td>
-    `;
-    orderTable.appendChild(newRow);
+        // Debugging: Log the created row for verification
+        console.log('New Row:', newRow.innerHTML);
+
+        orderTable.appendChild(newRow);
+
+        // Confirmation
+        alert('Order added successfully!');
+    });
 });
 
 // Calculate Best Supplier
@@ -740,7 +788,7 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
                 if (amountLimit && matchesAdditionalQuestions) {
                     // Fetch the supplier's daily rate for the service
                     const dailyRateInput = document.querySelector(
-                        `input[data-supplier="${supplier.name}"][data-service="${service.serviceType}"]`
+                        input[data-supplier="${supplier.name}"][data-service="${service.serviceType}"]
                     );
                     const dailyRate = dailyRateInput ? parseFloat(dailyRateInput.value) : null;
 
@@ -770,7 +818,8 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
 });
 
 // Calculate service charges during order processing
-function calculateServiceCharge(orderAmount, serviceCharges) {
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('calculateBestSupplierBtn').addEventListener('click',
     let totalServiceCharge = 0;
 
     serviceCharges.forEach(charge => {
@@ -803,11 +852,10 @@ function evaluateCondition(condition, amount) {
 
         return false;
     } catch (error) {
-        console.error(`Error evaluating condition: ${condition}`, error);
+        console.error(Error evaluating condition: ${condition}, error);
         return false;
     }
 }
-
     // Sync Suppliers to Google Sheet
     const googleSheetApiUrl = ""; // Add your Google Sheet API URL here
 
