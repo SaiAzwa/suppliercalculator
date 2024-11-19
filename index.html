@@ -304,6 +304,7 @@ window.addEventListener('load', function () {
     }
 });
 
+document.addEventListener('DOMContentLoaded', function () {
 // Toggle Supplier Management Section
 document.getElementById('toggleManagementBtn').addEventListener('click', function () {
     const section = document.getElementById('supplierManagementSection');
@@ -311,6 +312,7 @@ document.getElementById('toggleManagementBtn').addEventListener('click', functio
     this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
 });
 
+document.addEventListener('DOMContentLoaded', function () {
 // Add Amount Range
 document.getElementById('add-amount-range-btn').addEventListener('click', () => {
     const amountRangeItem = document.createElement('div');
@@ -322,6 +324,7 @@ document.getElementById('add-amount-range-btn').addEventListener('click', () => 
     document.getElementById('amount-limits-section').appendChild(amountRangeItem);
 });
 
+document.addEventListener('DOMContentLoaded', function () {
 // Add Service Charge
 document.getElementById('add-service-charge-btn').addEventListener('click', () => {
     const serviceChargeItem = document.createElement('div');
@@ -454,6 +457,7 @@ function handleAdditionalQuestions(inputElement) {
     }
 }
 
+document.addEventListener('DOMContentLoaded', function () {
 // Add or Update Supplier
 document.getElementById('add-supplier-btn').addEventListener('click', () => {
     const name = document.getElementById('supplier-name').value;
