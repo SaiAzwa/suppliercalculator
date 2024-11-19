@@ -302,6 +302,12 @@ input:focus, select:focus {
         }
     });
 
+    document.getElementById('toggleManagementBtn').addEventListener('click', function () {
+        const section = document.getElementById('supplierManagementSection');
+        section.classList.toggle('hidden');
+        this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
+    });
+
     document.getElementById('serviceType').addEventListener('change', function () {
         const additionalQuestionsContainer = document.getElementById('additionalQuestions');
         additionalQuestionsContainer.innerHTML = '';
@@ -464,74 +470,6 @@ input:focus, select:focus {
         alert('Best supplier calculation completed.');
     });
 
-    function evaluateCondition(condition, amount) {
-        try {
-            if (!condition) return false;
-            condition = condition.toLowerCase();
-
-            if (condition.includes('>')) {
-                const value = parseFloat(condition.split('>')[1]);
-                return amount > value;
-            } else if (condition.includes('<')) {
-                const value = parseFloat(condition.split('<')[1]);
-                return amount < value;
-            } else if (condition.includes('-')) {
-                const [min, max] = condition.split('-').map(parseFloat);
-                return amount >= min && amount <= max;
-            }
-
-            return true;
-        } catch (e) {
-            console.error(`Error evaluating condition: ${condition}`, e);
-            return false;
-        }
-    }
-
-    // Add Supplier Functionality (with Active/Inactive)
-    document.getElementById('add-supplier-btn').addEventListener('click', () => {
-        const name = document.getElementById('supplier-name').value;
-        const serviceType = document.getElementById('service-type').value;
-        const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
-        const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
-            return {
-                condition: item.querySelector('.service-condition').value,
-                charge: item.querySelector('.service-charge').value
-            };
-        });
-        const additionalQuestions = Array.from(document.querySelectorAll('#additional-questions-container .form-row')).map(row => {
-            const label = row.querySelector('label').textContent;
-            const value = row.querySelector('select').value;
-            return { label, value };
-        });
-        const isActive = document.getElementById('supplier-status').checked; // New active/inactive status
-
-        if (name && serviceType && amountLimits.length > 0) {
-            const supplierData = {
-                name,
-                isActive, // Store active/inactive status
-                services: [{
-                    serviceType,
-                    amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
-                    serviceCharges,
-                    additionalQuestions
-                }]
-            };
-
-            if (editingSupplierIndex === -1) {
-                suppliers.push(supplierData);
-            } else {
-                suppliers[editingSupplierIndex] = supplierData;
-                editingSupplierIndex = -1;
-                document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
-            }
-
-            localStorage.setItem('suppliers', JSON.stringify(suppliers));
-            updateSupplierTables();
-            updateDailyRateSection();
-            clearSupplierForm();
-        }
-    });
-
     // Sync suppliers to Google Sheet
     const googleSheetApiUrl = ""; // Replace with your Google Sheets API URL
 
@@ -577,7 +515,6 @@ input:focus, select:focus {
         }
     });
 
-    // Daily Rate Management
     function updateDailyRateSection() {
         const dailyRateSection = document.getElementById('daily-rate-section');
         dailyRateSection.innerHTML = '';
@@ -604,28 +541,7 @@ input:focus, select:focus {
             });
         });
     }
-
-    function saveDailyRates() {
-        document.querySelectorAll('#daily-rate-section input').forEach(input => {
-            const supplierName = input.getAttribute('data-supplier');
-            const serviceType = input.getAttribute('data-service');
-            const limit = input.getAttribute('data-limit');
-            const rate = parseFloat(input.value);
-
-            const supplier = suppliers.find(s => s.name === supplierName);
-            if (supplier) {
-                const service = supplier.services.find(s => s.serviceType === serviceType);
-                if (service) {
-                    const amountLimit = service.amountLimits.find(a => a.limit === limit);
-                    if (amountLimit) {
-                        amountLimit.rate = rate;
-                    }
-                }
-            }
-        });
-
-        localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Store updated suppliers with rates
-    }
 </script>
+
 </body>
 </html>
