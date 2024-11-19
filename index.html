@@ -657,6 +657,7 @@ function clearSupplierForm() {
     }
 
 // Add Order Functionality
+document.addEventListener('DOMContentLoaded', function () {
 document.getElementById('createOrderBtn').addEventListener('click', function () {
     const serviceType = document.getElementById('serviceType').value;
     const orderAmount = parseFloat(document.getElementById('orderAmount').value);
