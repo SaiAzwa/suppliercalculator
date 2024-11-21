@@ -471,37 +471,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM loaded and script initialized'); // Debugging: Ensure script runs
+
     // Add or Update Supplier
     const addSupplierButton = document.getElementById('add-supplier-btn');
     if (addSupplierButton) {
         addSupplierButton.addEventListener('click', () => {
             console.log('Add Supplier Button Clicked'); // Debugging: Log button click
 
-            const name = document.getElementById('supplier-name').value;
-            const serviceType = document.getElementById('service-type').value;
-            const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
-            const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
-                const condition = item.querySelector('.service-condition').value;
-                const charge = item.querySelector('.service-charge').value;
+            // Get supplier details
+            const name = document.getElementById('supplier-name')?.value.trim();
+            const serviceType = document.getElementById('service-type')?.value;
+            const amountLimits = Array.from(document.querySelectorAll('.amount-range'))
+                .map(input => input.value.trim())
+                .filter(limit => limit); // Remove empty values
+            const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item'))
+                .map(item => {
+                    const condition = item.querySelector('.service-condition')?.value.trim();
+                    const charge = item.querySelector('.service-charge')?.value.trim();
+                    return { condition, charge };
+                })
+                .filter(charge => charge.condition && charge.charge); // Remove incomplete entries
+            const isActive = document.getElementById('supplier-status')?.checked;
 
-                // Collect additional questions for this service charge
-                const additionalQuestions = Array.from(item.querySelectorAll('.additional-questions-container .form-group')).map(group => {
-                    const label = group.querySelector('label').textContent;
-                    const valueInput = group.querySelector('input, select');
-                    const value = valueInput.type === 'file' ? valueInput.files[0]?.name || 'File not uploaded' : valueInput.value;
-                    return { label, value };
-                });
-
-                return { condition, charge, additionalQuestions };
-            });
-            const isActive = document.getElementById('supplier-status').checked;
-
+            // Validation
             if (!name || !serviceType || amountLimits.length === 0) {
                 alert('Please fill in all required fields');
-                console.error('Validation Failed:', { name, serviceType, amountLimits }); // Debugging: Log validation issues
+                console.error('Validation Failed:', { name, serviceType, amountLimits });
                 return;
             }
 
+            // Prepare supplier data
             const supplierData = {
                 name,
                 isActive,
@@ -514,6 +515,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             console.log('Supplier Data:', supplierData); // Debugging: Log supplier data
 
+            // Add or update supplier
+            if (typeof suppliers === 'undefined') {
+                window.suppliers = []; // Ensure suppliers array exists
+            }
+
             if (editingSupplierIndex === -1) {
                 suppliers.push(supplierData);
             } else {
@@ -522,10 +528,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 addSupplierButton.textContent = 'Add Supplier';
             }
 
+            // Save to localStorage
             localStorage.setItem('suppliers', JSON.stringify(suppliers));
-            updateSupplierTables();
-            updateDailyRateSection();
-            clearSupplierForm();
+
+            // Update UI
+            updateSupplierTables?.(); // Ensure this function exists
+            updateDailyRateSection?.(); // Ensure this function exists
+            clearSupplierForm?.(); // Ensure this function exists
 
             alert('Supplier added/updated successfully!');
         });
@@ -533,6 +542,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Add Supplier Button not found'); // Debugging: Log if button not found
     }
 });
+
 
 // Update Supplier Tables
 function updateSupplierTables() {
