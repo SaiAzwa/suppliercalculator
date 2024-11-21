@@ -409,28 +409,29 @@ console.log('Service Charge:', calculateServiceCharge(orderAmount, serviceCharge
     });
 });
 
-// Handle additional questions
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM fully loaded and parsed'); // Debugging: Ensure script runs
+
     // Handle Additional Questions Based on Service Type
-    function handleAdditionalQuestionsBasedOnService(serviceType) {
-        const questionsContainer = document.getElementById('additionalQuestions');
+    function handleAdditionalQuestionsForSupplier(serviceType) {
+        const questionsContainer = document.getElementById('additional-questions-container');
         
-        // Clear existing additional questions
+        // Clear any existing questions
         questionsContainer.innerHTML = '';
 
         // Define additional questions for each service type
         const additionalQuestionsMap = {
-            'bankTransferSaver': [
+            'bank-express': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
             ],
-            'bankTransferExpress': [
+            'bank-saver': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
             ],
-            'bankTransferUSD': [
+            'usd-transfer': [
                 { label: 'Account Type', type: 'select', options: ['Personal', 'Company'] }
             ],
             'alipay': [
@@ -439,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ]
         };
 
-        // Match the selected service type to additional questions
+        // Get the questions for the selected service type
         const questions = additionalQuestionsMap[serviceType];
 
         // Render the questions if they exist
@@ -460,64 +461,77 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Add an event listener for service type selection
-    const serviceTypeElement = document.getElementById('serviceType');
-    if (serviceTypeElement) {
-        serviceTypeElement.addEventListener('change', function() {
+    // Add event listener for service type selection
+    const serviceTypeDropdown = document.getElementById('service-type');
+    if (serviceTypeDropdown) {
+        serviceTypeDropdown.addEventListener('change', function () {
             const selectedServiceType = this.value;
-            handleAdditionalQuestionsBasedOnService(selectedServiceType);
+            console.log('Service Type Selected:', selectedServiceType); // Debugging: Log selected service type
+            handleAdditionalQuestionsForSupplier(selectedServiceType);
         });
     }
-});
 
+    // Add or Update Supplier
+    const addSupplierButton = document.getElementById('add-supplier-btn');
+    if (addSupplierButton) {
+        addSupplierButton.addEventListener('click', () => {
+            console.log('Add Supplier Button Clicked'); // Debugging: Log button click
 
-// Add or Update Supplier
-document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('add-supplier-btn').addEventListener('click', () => {
-    const name = document.getElementById('supplier-name').value;
-    const serviceType = document.getElementById('service-type').value;
-    const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
-    const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
-        const condition = item.querySelector('.service-condition').value;
-        const charge = item.querySelector('.service-charge').value;
+            const name = document.getElementById('supplier-name').value;
+            const serviceType = document.getElementById('service-type').value;
+            const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value);
+            const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
+                const condition = item.querySelector('.service-condition').value;
+                const charge = item.querySelector('.service-charge').value;
 
-        // Collect additional questions for this service charge
-        const additionalQuestions = Array.from(item.querySelectorAll('.additional-questions-container .form-group')).map(group => {
-            const label = group.querySelector('label').textContent;
-            const valueInput = group.querySelector('input');
-            const value = valueInput.type === 'file' ? valueInput.files[0]?.name || 'File not uploaded' : valueInput.value;
-            return { label, value };
+                // Collect additional questions for this service charge
+                const additionalQuestions = Array.from(item.querySelectorAll('.additional-questions-container .form-group')).map(group => {
+                    const label = group.querySelector('label').textContent;
+                    const valueInput = group.querySelector('input, select');
+                    const value = valueInput.type === 'file' ? valueInput.files[0]?.name || 'File not uploaded' : valueInput.value;
+                    return { label, value };
+                });
+
+                return { condition, charge, additionalQuestions };
+            });
+            const isActive = document.getElementById('supplier-status').checked;
+
+            if (!name || !serviceType || amountLimits.length === 0) {
+                alert('Please fill in all required fields');
+                console.error('Validation Failed:', { name, serviceType, amountLimits }); // Debugging: Log validation issues
+                return;
+            }
+
+            const supplierData = {
+                name,
+                isActive,
+                services: [{
+                    serviceType,
+                    amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
+                    serviceCharges
+                }]
+            };
+
+            console.log('Supplier Data:', supplierData); // Debugging: Log supplier data
+
+            if (editingSupplierIndex === -1) {
+                suppliers.push(supplierData);
+            } else {
+                suppliers[editingSupplierIndex] = supplierData;
+                editingSupplierIndex = -1;
+                addSupplierButton.textContent = 'Add Supplier';
+            }
+
+            localStorage.setItem('suppliers', JSON.stringify(suppliers));
+            updateSupplierTables();
+            updateDailyRateSection();
+            clearSupplierForm();
+
+            alert('Supplier added/updated successfully!');
         });
-
-        return { condition, charge, additionalQuestions };
-    });
-    const isActive = document.getElementById('supplier-status').checked;
-
-    if (name && serviceType && amountLimits.length > 0) {
-        const supplierData = {
-            name,
-            isActive,
-            services: [{
-                serviceType,
-                amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
-                serviceCharges
-            }]
-        };
-
-        if (editingSupplierIndex === -1) {
-            suppliers.push(supplierData);
-        } else {
-            suppliers[editingSupplierIndex] = supplierData;
-            editingSupplierIndex = -1;
-            document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
-        }
-
-        localStorage.setItem('suppliers', JSON.stringify(suppliers));
-        updateSupplierTables();
-        updateDailyRateSection();
-        clearSupplierForm();
+    } else {
+        console.error('Add Supplier Button not found'); // Debugging: Log if button not found
     }
-  });
 });
 
 // Update Supplier Tables
@@ -761,6 +775,67 @@ function clearSupplierForm() {
         // Confirmation
         alert('Order added successfully!');
     });
+});
+
+// Handle additional questions
+document.addEventListener('DOMContentLoaded', function () {
+    // Handle Additional Questions Based on Service Type
+    function handleAdditionalQuestionsBasedOnService(serviceType) {
+        const questionsContainer = document.getElementById('additionalQuestions');
+        
+        // Clear existing additional questions
+        questionsContainer.innerHTML = '';
+
+        // Define additional questions for each service type
+        const additionalQuestionsMap = {
+            'bankTransferSaver': [
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
+            ],
+            'bankTransferExpress': [
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
+            ],
+            'bankTransferUSD': [
+                { label: 'Account Type', type: 'select', options: ['Personal', 'Company'] }
+            ],
+            'alipay': [
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
+            ]
+        };
+
+        // Match the selected service type to additional questions
+        const questions = additionalQuestionsMap[serviceType];
+
+        // Render the questions if they exist
+        if (questions) {
+            questions.forEach(question => {
+                const questionDiv = document.createElement('div');
+                questionDiv.classList.add('form-group');
+                questionDiv.innerHTML = `
+                    <label>${question.label}</label>
+                    ${
+                        question.type === 'select'
+                            ? `<select>${question.options.map(option => `<option value="${option.toLowerCase()}">${option}</option>`).join('')}</select>`
+                            : `<input type="${question.type}" placeholder="${question.placeholder || ''}" />`
+                    }
+                `;
+                questionsContainer.appendChild(questionDiv);
+            });
+        }
+    }
+
+    // Add an event listener for service type selection
+    const serviceTypeElement = document.getElementById('serviceType');
+    if (serviceTypeElement) {
+        serviceTypeElement.addEventListener('change', function() {
+            const selectedServiceType = this.value;
+            handleAdditionalQuestionsBasedOnService(selectedServiceType);
+        });
+    }
 });
 
 // Calculate Best Supplier
