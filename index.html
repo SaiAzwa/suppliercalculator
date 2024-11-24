@@ -473,7 +473,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// Add or Update Supplier
 document.addEventListener('DOMContentLoaded', function () {
     const addSupplierButton = document.getElementById('add-supplier-btn');
     if (addSupplierButton) {
@@ -536,12 +535,38 @@ document.addEventListener('DOMContentLoaded', function () {
             updateDailyRateSection?.(); // Ensure this function exists
             clearSupplierForm?.(); // Ensure this function exists
 
-            alert('Supplier added/updated successfully!');
+            // Show success notification
+            showNotification('Supplier added successfully!', 'success');
         });
     } else {
         console.error('Add Supplier Button not found'); // Debugging: Log if button not found
     }
 });
+
+// Function to show notifications
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    
+    // Style notification (inline or in CSS)
+    notification.style.position = 'fixed';
+    notification.style.bottom = '20px';
+    notification.style.right = '20px';
+    notification.style.backgroundColor = type === 'success' ? '#10b981' : '#f59e0b';
+    notification.style.color = 'white';
+    notification.style.padding = '15px';
+    notification.style.borderRadius = '8px';
+    notification.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)';
+    notification.style.fontSize = '16px';
+
+    document.body.appendChild(notification);
+
+    // Auto-remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     // Update Supplier Tables
@@ -584,6 +609,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Delete Supplier Function
+function deleteSupplier(index) {
+    // Confirm deletion with the user
+    const confirmDelete = confirm("Are you sure you want to delete this supplier?");
+    if (!confirmDelete) return;
+
+    // Remove the supplier at the specified index
+    suppliers.splice(index, 1);
+
+    // Save updated suppliers to localStorage
+    localStorage.setItem('suppliers', JSON.stringify(suppliers));
+
+    // Update the supplier tables in the UI
+    updateSupplierTables();
+}
     // Add Tab-Switching Functionality
     const tabs = document.querySelectorAll('.tab'); // Select all tab elements
     const tabContents = document.querySelectorAll('.tab-content'); // Select all tab-content elements
