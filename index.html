@@ -600,28 +600,36 @@ document.addEventListener('DOMContentLoaded', function () {
         suppliers.forEach((supplier, index) => {
             supplier.services.forEach(service => {
                 const additionalQuestions = service.additionalQuestions || [];
-                const row = `
-                    <tr>
-                        <td>${supplier.name}</td>
-                        <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
-                        <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-                        <td>${additionalQuestions.map(q => `${q.label}: ${q.value || ''}`).join(', ')}</td>
-                        <td>
-                            <button 
-                                class="status-toggle-btn" 
-                                onclick="toggleSupplierStatus(${index})">
-                                ${supplier.isActive ? 'Active' : 'Inactive'}
-                            </button>
-                        </td>
-                        <td>
-                            <button onclick="editSupplier(${index})">Edit</button>
-                            <button onclick="deleteSupplier(${index})">Delete</button>
-                        </td>
-                    </tr>
+                const row = document.createElement('tr'); // Use createElement for proper event binding
+                row.innerHTML = `
+                    <td>${supplier.name}</td>
+                    <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
+                    <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+                    <td>${additionalQuestions.map(q => `${q.label}: ${q.value || ''}`).join(', ')}</td>
+                    <td>
+                        <button class="status-toggle-btn">
+                            ${supplier.isActive ? 'Active' : 'Inactive'}
+                        </button>
+                    </td>
+                    <td>
+                        <button class="edit-btn">Edit</button>
+                        <button class="delete-btn">Delete</button>
+                    </td>
                 `;
 
+                // Add event listener for status toggle
+                row.querySelector('.status-toggle-btn').addEventListener('click', function () {
+                    toggleSupplierStatus(index);
+                });
+
+                // Add event listener for delete
+                row.querySelector('.delete-btn').addEventListener('click', function () {
+                    deleteSupplier(index);
+                });
+
+                // Append the row to the correct table
                 if (tables[service.serviceType]) {
-                    tables[service.serviceType].innerHTML += row;
+                    tables[service.serviceType].appendChild(row);
                 }
             });
         });
@@ -664,30 +672,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showNotification('Supplier deleted successfully!', 'success');
     }
 
-    // Add Tab-Switching Functionality
-    const tabs = document.querySelectorAll('.tab'); // Select all tab elements
-    const tabContents = document.querySelectorAll('.tab-content'); // Select all tab-content elements
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function () {
-            const target = this.dataset.service; // Get the data-service attribute of the clicked tab
-
-            // Deactivate all tabs and hide their content
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-
-            // Activate the clicked tab and display the associated content
-            this.classList.add('active');
-            document.getElementById(`${target}-tab`).classList.add('active');
-        });
-    });
-
-    // Call updateSupplierTables() whenever supplier data is updated
-    document.getElementById('add-supplier-btn')?.addEventListener('click', function () {
-        updateSupplierTables(); // Ensure the tables update after adding a supplier
-    });
-
-    // Function to show notifications
+    // Notification Utility
     function showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.textContent = message;
@@ -711,6 +696,9 @@ document.addEventListener('DOMContentLoaded', function () {
             notification.remove();
         }, 3000);
     }
+
+    // Initial table update on page load
+    updateSupplierTables();
 });
 
 // Edit Supplier
