@@ -409,6 +409,7 @@ console.log('Service Charge:', calculateServiceCharge(orderAmount, serviceCharge
     });
 });
 
+// Handle Additional Questions Based on Service Type
 document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM fully loaded and parsed'); // Debugging: Ensure script runs
 
@@ -470,11 +471,10 @@ document.addEventListener('DOMContentLoaded', function () {
             handleAdditionalQuestionsForSupplier(selectedServiceType);
         });
     }
+});
 
-    document.addEventListener('DOMContentLoaded', function () {
-    console.log('DOM loaded and script initialized'); // Debugging: Ensure script runs
-
-    // Add or Update Supplier
+// Add or Update Supplier
+document.addEventListener('DOMContentLoaded', function () {
     const addSupplierButton = document.getElementById('add-supplier-btn');
     if (addSupplierButton) {
         addSupplierButton.addEventListener('click', () => {
@@ -512,7 +512,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     serviceCharges
                 }]
             };
-        };
 
             console.log('Supplier Data:', supplierData); // Debugging: Log supplier data
 
@@ -543,7 +542,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Add Supplier Button not found'); // Debugging: Log if button not found
     }
 });
-
 
 // Update Supplier Tables
 function updateSupplierTables() {
