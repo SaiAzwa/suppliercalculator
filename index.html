@@ -590,7 +590,6 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-
 document.addEventListener('DOMContentLoaded', function () {
     // Update Supplier Tables
     function updateSupplierTables() {
@@ -607,11 +606,21 @@ document.addEventListener('DOMContentLoaded', function () {
             if (table) table.innerHTML = '';
         });
 
+        // Log the suppliers array for debugging
+        console.log('Suppliers Array:', suppliers);
+
         // Populate data into the relevant table
         suppliers.forEach((supplier, index) => {
             supplier.services.forEach(service => {
+                // Ensure the service type matches the tab keys
+                const tabKey = service.serviceType;
+                if (!tables[tabKey]) {
+                    console.error(`Service type "${tabKey}" does not match any tab key.`);
+                    return;
+                }
+
                 const additionalQuestions = service.additionalQuestions || [];
-                const row = document.createElement('tr'); // Use createElement for proper event binding
+                const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${supplier.name}</td>
                     <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
@@ -639,9 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 // Append the row to the correct table
-                if (tables[service.serviceType]) {
-                    tables[service.serviceType].appendChild(row);
-                }
+                tables[tabKey].appendChild(row);
             });
         });
     }
