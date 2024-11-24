@@ -543,40 +543,70 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// Update Supplier Tables
-function updateSupplierTables() {
-    const tables = {
-        'bank-express': document.getElementById('bank-express-table-body'),
-        'bank-saver': document.getElementById('bank-saver-table-body'),
-        'enterprise': document.getElementById('enterprise-table-body'),
-        'usd-transfer': document.getElementById('usd-transfer-table-body'),
-        'alipay': document.getElementById('alipay-table-body')
-    };
+document.addEventListener('DOMContentLoaded', function () {
+    // Update Supplier Tables
+    function updateSupplierTables() {
+        const tables = {
+            'bank-express': document.getElementById('bank-express-table-body'),
+            'bank-saver': document.getElementById('bank-saver-table-body'),
+            'enterprise': document.getElementById('enterprise-table-body'),
+            'usd-transfer': document.getElementById('usd-transfer-table-body'),
+            'alipay': document.getElementById('alipay-table-body')
+        };
 
-    Object.values(tables).forEach(table => table.innerHTML = '');
+        // Clear all tables
+        Object.values(tables).forEach(table => {
+            if (table) table.innerHTML = '';
+        });
 
-    suppliers.forEach((supplier, index) => {
-        supplier.services.forEach(service => {
-            const row = `
-                <tr>
-                    <td>${supplier.name}</td>
-                    <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
-                    <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-                    <td>${service.additionalQuestions.map(q => `${q.label}: ${q.value}`).join(', ')}</td>
-                    <td>${supplier.isActive ? 'Active' : 'Inactive'}</td>
-                    <td>
-                        <button onclick="editSupplier(${index})">Edit</button>
-                        <button onclick="deleteSupplier(${index})">Delete</button>
-                    </td>
-                </tr>
-            `;
+        // Populate data into the relevant table
+        suppliers.forEach((supplier, index) => {
+            supplier.services.forEach(service => {
+                const additionalQuestions = service.additionalQuestions || [];
+                const row = `
+                    <tr>
+                        <td>${supplier.name}</td>
+                        <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
+                        <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+                        <td>${additionalQuestions.map(q => `${q.label}: ${q.value || ''}`).join(', ')}</td>
+                        <td>${supplier.isActive ? 'Active' : 'Inactive'}</td>
+                        <td>
+                            <button onclick="editSupplier(${index})">Edit</button>
+                            <button onclick="deleteSupplier(${index})">Delete</button>
+                        </td>
+                    </tr>
+                `;
 
-            if (tables[service.serviceType]) {
-                tables[service.serviceType].innerHTML += row;
-            }
+                if (tables[service.serviceType]) {
+                    tables[service.serviceType].innerHTML += row;
+                }
+            });
+        });
+    }
+
+    // Add Tab-Switching Functionality
+    const tabs = document.querySelectorAll('.tab'); // Select all tab elements
+    const tabContents = document.querySelectorAll('.tab-content'); // Select all tab-content elements
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            const target = this.dataset.service; // Get the data-service attribute of the clicked tab
+
+            // Deactivate all tabs and hide their content
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+
+            // Activate the clicked tab and display the associated content
+            this.classList.add('active');
+            document.getElementById(`${target}-tab`).classList.add('active');
         });
     });
-}
+
+    // Call updateSupplierTables() whenever supplier data is updated
+    document.getElementById('add-supplier-btn')?.addEventListener('click', function () {
+        updateSupplierTables(); // Ensure the tables update after adding a supplier
+    });
+});
 
 // Edit Supplier
 function editSupplier(index) {
