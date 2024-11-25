@@ -602,64 +602,67 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Update Supplier Tables
     function updateSupplierTables() {
-        const tables = {
-            'bank-express': document.getElementById('bank-express-table-body'),
-            'bank-saver': document.getElementById('bank-saver-table-body'),
-            'enterprise': document.getElementById('enterprise-table-body'),
-            'usd-transfer': document.getElementById('usd-transfer-table-body'),
-            'alipay': document.getElementById('alipay-table-body')
-        };
+    const tables = {
+        'bank-express': document.getElementById('bank-express-table-body'),
+        'bank-saver': document.getElementById('bank-saver-table-body'),
+        'enterprise': document.getElementById('enterprise-table-body'),
+        'usd-transfer': document.getElementById('usd-transfer-table-body'),
+        'alipay': document.getElementById('alipay-table-body')
+    };
 
-        // Clear all tables
-        Object.values(tables).forEach(table => {
-            if (table) table.innerHTML = '';
-        });
+    // Clear all tables
+    Object.values(tables).forEach(table => {
+        if (table) table.innerHTML = '';
+    });
 
-        // Log the suppliers array for debugging
-        console.log('Suppliers Array:', suppliers);
+    console.log('Suppliers Array:', suppliers); // Debugging
 
-        // Populate data into the relevant table
-        suppliers.forEach((supplier, index) => {
-            supplier.services.forEach(service => {
-                const tabKey = service.serviceType;
-                if (!tables[tabKey]) {
-                    console.error(`Service type "${tabKey}" does not match any tab key.`);
-                    return;
-                }
+    // Populate data into the relevant table
+    suppliers.forEach((supplier, supplierIndex) => {
+        supplier.services.forEach((service, serviceIndex) => {
+            const tabKey = service.serviceType;
+            if (!tables[tabKey]) {
+                console.error(`Service type "${tabKey}" does not match any tab key.`);
+                return;
+            }
 
-                const additionalQuestions = service.additionalQuestions || [];
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${supplier.name}</td>
-                    <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
-                    <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-                    <td>${additionalQuestions.map(q => `${q.label}: ${q.value || ''}`).join(', ')}</td>
-                    <td>
-                        <button class="status-toggle-btn">
-                            ${supplier.isActive ? 'Active' : 'Inactive'}
-                        </button>
-                    </td>
-                    <td>
-                        <button class="edit-btn">Edit</button>
-                        <button class="delete-btn">Delete</button>
-                    </td>
-                `;
+            const additionalQuestions = service.additionalQuestions || [];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${supplier.name}</td>
+                <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
+                <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+                <td>${additionalQuestions.map(q => `${q.label}: ${q.value || ''}`).join(', ')}</td>
+                <td>
+                    <button class="status-toggle-btn">
+                        ${supplier.isActive ? 'Active' : 'Inactive'}
+                    </button>
+                </td>
+                <td>
+                    <button class="edit-btn">Edit</button>
+                    <button class="delete-btn">Delete</button>
+                </td>
+            `;
 
-                // Add event listener for status toggle
-                row.querySelector('.status-toggle-btn').addEventListener('click', function () {
-                    toggleSupplierStatus(index);
-                });
-
-                // Add event listener for delete
-                row.querySelector('.delete-btn').addEventListener('click', function () {
-                    deleteSupplier(index);
-                });
-
-                // Append the row to the correct table
-                tables[tabKey].appendChild(row);
+            // Add event listener for status toggle
+            row.querySelector('.status-toggle-btn').addEventListener('click', function () {
+                toggleSupplierStatus(supplierIndex);
             });
+
+            // Add event listener for delete
+            row.querySelector('.delete-btn').addEventListener('click', function () {
+                deleteSupplier(supplierIndex);
+            });
+
+            // Add event listener for edit
+            row.querySelector('.edit-btn').addEventListener('click', function () {
+                editSupplier(supplierIndex, serviceIndex);
+            });
+
+            tables[tabKey].appendChild(row);
         });
-    }
+    });
+}
 
     // Add or Update Supplier
     document.getElementById('add-supplier-btn').addEventListener('click', function () {
@@ -883,55 +886,104 @@ function clearSupplierForm() {
     editingSupplierIndex = -1;
 }
 
-    // Daily Rate Section
     function updateDailyRateSection() {
-        const dailyRateSection = document.getElementById('daily-rate-section');
-        dailyRateSection.innerHTML = '';
+    const dailyRateSection = document.getElementById('daily-rate-section');
+    if (!dailyRateSection) {
+        console.error('Daily rate section element not found.');
+        return;
+    }
 
-        suppliers.forEach(supplier => {
-            const supplierHeader = document.createElement('h4');
-            supplierHeader.textContent = `Supplier: ${supplier.name}`;
-            dailyRateSection.appendChild(supplierHeader);
+    // Clear the section before updating
+    dailyRateSection.innerHTML = '';
 
-            supplier.services.forEach(service => {
-                const serviceHeader = document.createElement('h5');
-                serviceHeader.textContent = `Service: ${service.serviceType.replace(/-/g, ' ')}`;
-                dailyRateSection.appendChild(serviceHeader);
+    // Check if there are suppliers to display
+    if (suppliers.length === 0) {
+        const noSuppliersMessage = document.createElement('p');
+        noSuppliersMessage.textContent = 'No suppliers available to display daily rates.';
+        noSuppliersMessage.style.color = '#555';
+        noSuppliersMessage.style.fontStyle = 'italic';
+        dailyRateSection.appendChild(noSuppliersMessage);
+        return;
+    }
 
-                service.amountLimits.forEach(limit => {
-                    const rateRow = document.createElement('div');
-                    rateRow.classList.add('form-row');
-                    rateRow.innerHTML = `
-                        <label>Amount Limit: ${limit.limit} - Rate:</label>
-                        <input type="number" placeholder="Enter daily rate" data-supplier="${supplier.name}" data-service="${service.serviceType}" data-limit="${limit.limit}">
-                    `;
-                    dailyRateSection.appendChild(rateRow);
-                });
+    // Iterate through suppliers and their services to populate daily rates
+    suppliers.forEach(supplier => {
+        const supplierHeader = document.createElement('h4');
+        supplierHeader.textContent = `Supplier: ${supplier.name}`;
+        dailyRateSection.appendChild(supplierHeader);
+
+        supplier.services.forEach(service => {
+            const serviceHeader = document.createElement('h5');
+            serviceHeader.textContent = `Service: ${service.serviceType.replace(/-/g, ' ')}`;
+            dailyRateSection.appendChild(serviceHeader);
+
+            service.amountLimits.forEach(limit => {
+                const rateRow = document.createElement('div');
+                rateRow.classList.add('form-row');
+                rateRow.innerHTML = `
+                    <label>Amount Limit: ${limit.limit} - Rate:</label>
+                    <input 
+                        type="number" 
+                        placeholder="Enter daily rate" 
+                        value="${limit.rate || ''}" 
+                        data-supplier="${supplier.name}" 
+                        data-service="${service.serviceType}" 
+                        data-limit="${limit.limit}"
+                    >
+                `;
+                dailyRateSection.appendChild(rateRow);
             });
         });
+    });
+}
+
+// Save Daily Rates
+function saveDailyRates() {
+    const rateInputs = document.querySelectorAll('#daily-rate-section input');
+    if (rateInputs.length === 0) {
+        console.warn('No daily rates to save.');
+        return;
     }
 
-    function saveDailyRates() {
-        document.querySelectorAll('#daily-rate-section input').forEach(input => {
-            const supplierName = input.getAttribute('data-supplier');
-            const serviceType = input.getAttribute('data-service');
-            const limit = input.getAttribute('data-limit');
-            const rate = parseFloat(input.value);
+    rateInputs.forEach(input => {
+        const supplierName = input.getAttribute('data-supplier');
+        const serviceType = input.getAttribute('data-service');
+        const limit = input.getAttribute('data-limit');
+        const rate = parseFloat(input.value);
 
-            const supplier = suppliers.find(s => s.name === supplierName);
-            if (supplier) {
-                const service = supplier.services.find(s => s.serviceType === serviceType);
-                if (service) {
-                    const amountLimit = service.amountLimits.find(a => a.limit === limit);
-                    if (amountLimit) {
-                        amountLimit.rate = rate;
-                    }
+        const supplier = suppliers.find(s => s.name === supplierName);
+        if (supplier) {
+            const service = supplier.services.find(s => s.serviceType === serviceType);
+            if (service) {
+                const amountLimit = service.amountLimits.find(a => a.limit === limit);
+                if (amountLimit) {
+                    amountLimit.rate = isNaN(rate) ? null : rate;
                 }
             }
-        });
+        }
+    });
 
-        localStorage.setItem('suppliers', JSON.stringify(suppliers)); // Store updated suppliers with rates
+    // Save updated data to localStorage
+    localStorage.setItem('suppliers', JSON.stringify(suppliers));
+    console.log('Daily rates saved successfully.');
+}
+
+// Ensure daily rate section is updated on page load
+document.addEventListener('DOMContentLoaded', function () {
+    // Load suppliers from localStorage if available
+    const storedSuppliers = localStorage.getItem('suppliers');
+    if (storedSuppliers) {
+        suppliers = JSON.parse(storedSuppliers);
     }
+
+    // Update daily rate section on load
+    updateDailyRateSection();
+
+    // Add event listener to save rates when necessary
+    document.getElementById('daily-rate-section')?.addEventListener('input', () => {
+        saveDailyRates();
+    });
+});
 
      // Add Order Functionality
     document.addEventListener('DOMContentLoaded', function () {
