@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${supplier.name}</td>
                 <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
                 <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-                <td>${additionalQuestions.map(q => `${q.label}: ${q.value || ''}`).join(', ')}</td>
+                <td>${additionalQuestions.map(q => `${q.label}: ${q.value || 'N/A'}`).join(', ')}</td>
                 <td>
                     <button class="status-toggle-btn">
                         ${supplier.isActive ? 'Active' : 'Inactive'}
@@ -662,50 +662,68 @@ document.addEventListener('DOMContentLoaded', function () {
             tables[tabKey].appendChild(row);
         });
     });
+
+    console.log('Supplier tables updated.'); // Debugging
 }
 
     // Add or Update Supplier
-    document.getElementById('add-supplier-btn').addEventListener('click', function () {
-        const name = document.getElementById('supplier-name').value.trim();
-        const serviceType = document.getElementById('service-type').value;
-        const isActive = document.getElementById('supplier-status')?.checked;
-        const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value.trim());
-        const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
-            return {
-                condition: item.querySelector('.service-condition').value.trim(),
-                charge: item.querySelector('.service-charge').value.trim()
-            };
-        });
-
-        if (!name || !serviceType || amountLimits.length === 0) {
-            alert('Please fill out all required fields.');
-            return;
-        }
-
-        const supplierData = {
-            name,
-            isActive,
-            services: [{
-                serviceType,
-                amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
-                serviceCharges
-            }]
+   document.getElementById('add-supplier-btn').addEventListener('click', function () {
+    const name = document.getElementById('supplier-name').value.trim();
+    const serviceType = document.getElementById('service-type').value;
+    const isActive = document.getElementById('supplier-status')?.checked;
+    const amountLimits = Array.from(document.querySelectorAll('.amount-range'))
+        .map(input => input.value.trim())
+        .filter(limit => limit); // Filter out empty inputs
+    const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
+        return {
+            condition: item.querySelector('.service-condition').value.trim(),
+            charge: item.querySelector('.service-charge').value.trim()
         };
-
-        if (editingSupplierIndex === -1) {
-            suppliers.push(supplierData);
-            showNotification(`Supplier "${name}" added successfully!`, 'success');
-        } else {
-            suppliers[editingSupplierIndex] = supplierData;
-            editingSupplierIndex = -1;
-            this.textContent = 'Add Supplier';
-            showNotification(`Supplier "${name}" updated successfully!`, 'success');
-        }
-
-        localStorage.setItem('suppliers', JSON.stringify(suppliers));
-        updateSupplierTables();
-        clearSupplierForm();
     });
+    const additionalQuestions = Array.from(document.querySelectorAll('.additional-question-item')).map(item => {
+        return {
+            label: item.querySelector('.question-label').textContent.trim(),
+            value: item.querySelector('.question-answer').value.trim()
+        };
+    });
+
+    // Validation
+    if (!name || !serviceType || amountLimits.length === 0) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+
+    // Create supplier data object
+    const supplierData = {
+        name,
+        isActive,
+        services: [{
+            serviceType,
+            amountLimits: amountLimits.map(limit => ({ limit, rate: null })), // Initialize rate as null
+            serviceCharges,
+            additionalQuestions // Include additional questions
+        }]
+    };
+
+    // Add new supplier or update existing one
+    if (editingSupplierIndex === -1) {
+        suppliers.push(supplierData);
+        showNotification(`Supplier "${name}" added successfully!`, 'success');
+    } else {
+        suppliers[editingSupplierIndex] = supplierData;
+        editingSupplierIndex = -1;
+        this.textContent = 'Add Supplier';
+        showNotification(`Supplier "${name}" updated successfully!`, 'success');
+    }
+
+    // Save suppliers to localStorage
+    localStorage.setItem('suppliers', JSON.stringify(suppliers));
+
+    // Update supplier tables and clear the form
+    updateSupplierTables();
+    updateDailyRateSection(); // Ensure the daily rate section reflects changes
+    clearSupplierForm();
+});
 
     // Toggle Supplier Status
     function toggleSupplierStatus(index) {
@@ -817,8 +835,14 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Edit Supplier
+// Edit Supplier
 function editSupplier(index) {
     const supplier = suppliers[index];
+    if (!supplier) {
+        console.error(`Supplier at index ${index} not found.`);
+        return;
+    }
+
     document.getElementById('supplier-name').value = supplier.name;
     document.getElementById('service-type').value = supplier.services[0].serviceType;
     document.getElementById('supplier-status').checked = supplier.isActive;
@@ -851,23 +875,59 @@ function editSupplier(index) {
             <div class="additional-questions-container"></div>
         `;
 
-        const questionsContainer = serviceChargeItem.querySelector('.additional-questions-container');
-        charge.additionalQuestions.forEach(question => {
-            const questionDiv = document.createElement('div');
-            questionDiv.classList.add('form-group');
-            questionDiv.innerHTML = `
-                <label>${question.label}</label>
-                <input type="text" value="${question.value}" />
-            `;
-            questionsContainer.appendChild(questionDiv);
-        });
-
         document.getElementById('service-charge-section').appendChild(serviceChargeItem);
     });
 
     editingSupplierIndex = index;
     document.getElementById('add-supplier-btn').textContent = 'Update Supplier';
 }
+
+// Add or Update Supplier with Confirmation
+document.getElementById('add-supplier-btn').addEventListener('click', function () {
+    const name = document.getElementById('supplier-name').value.trim();
+    const serviceType = document.getElementById('service-type').value;
+    const isActive = document.getElementById('supplier-status')?.checked;
+    const amountLimits = Array.from(document.querySelectorAll('.amount-range')).map(input => input.value.trim());
+    const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
+        return {
+            condition: item.querySelector('.service-condition').value.trim(),
+            charge: item.querySelector('.service-charge').value.trim()
+        };
+    });
+
+    if (!name || !serviceType || amountLimits.length === 0) {
+        alert('Please fill out all required fields.');
+        return;
+    }
+
+    const supplierData = {
+        name,
+        isActive,
+        services: [{
+            serviceType,
+            amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
+            serviceCharges
+        }]
+    };
+
+    if (editingSupplierIndex === -1) {
+        suppliers.push(supplierData);
+        showNotification(`Supplier "${name}" added successfully!`, 'success');
+    } else {
+        suppliers[editingSupplierIndex] = supplierData;
+        editingSupplierIndex = -1;
+        this.textContent = 'Add Supplier';
+        showNotification(`Supplier "${name}" updated successfully!`, 'success'); // Confirmation for editing
+    }
+
+    // Save to localStorage
+    localStorage.setItem('suppliers', JSON.stringify(suppliers));
+
+    // Update UI
+    updateSupplierTables();
+    updateDailyRateSection();
+    clearSupplierForm();
+});
 
 // Remove Item (Amount Range or Service Charge)
 function removeItem(button) {
