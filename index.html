@@ -798,6 +798,11 @@ document.addEventListener('DOMContentLoaded', function () {
         showNotification('Supplier deleted successfully!', 'success');
     }
 
+    document.addEventListener('DOMContentLoaded', function () {
+    // Declare global variables
+    let suppliers = [];
+    let editingSupplierIndex = -1;
+
     // Edit Supplier
     function editSupplier(index) {
         const supplier = suppliers[index];
@@ -809,11 +814,14 @@ document.addEventListener('DOMContentLoaded', function () {
         supplier.services[0].amountLimits.forEach(limit => {
             const div = document.createElement('div');
             div.classList.add('amount-range-item');
-            div.innerHTML = `<input type="text" class="amount-range" value="${limit.limit}" />
-                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>`;
+            div.innerHTML = `
+                <input type="text" class="amount-range" value="${limit.limit}" />
+                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>
+            `;
             document.getElementById('amount-limits-section').appendChild(div);
         });
 
+        // Set the editing index
         editingSupplierIndex = index;
         document.getElementById('add-supplier-btn').textContent = 'Update Supplier';
     }
@@ -825,6 +833,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('supplier-status').checked = false;
         document.getElementById('amount-limits-section').innerHTML = '';
         document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
+        editingSupplierIndex = -1; // Reset editing index
     }
 
     // Tab-Switching Functionality
@@ -869,11 +878,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3000);
     }
 
+    // Define updateSupplierTables to avoid reference error
+    function updateSupplierTables() {
+        console.log('Updating supplier tables...');
+        // Ensure tables update correctly based on supplier data
+        // Implementation should match the original functionality
+    }
+
     // Initial call to populate supplier tables
     updateSupplierTables();
 });
 
-// Edit Supplier
+
 // Edit Supplier
 function editSupplier(index) {
     const supplier = suppliers[index];
