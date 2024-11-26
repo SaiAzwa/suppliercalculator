@@ -914,23 +914,36 @@ function createSupplierRow(supplier, supplierIndex, service) {
     editingSupplierIndex = -1;
 }
 
-    // Tab-Switching Functionality
+ document.addEventListener('DOMContentLoaded', function () {
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
+
+    console.log('Tabs loaded:', Array.from(tabs).map(tab => tab.dataset.service));
+    console.log('Tab contents loaded:', Array.from(tabContents).map(tc => tc.id));
 
     tabs.forEach(tab => {
         tab.addEventListener('click', function () {
             const target = this.dataset.service;
 
+            console.log('Tab clicked:', target); // Debug clicked tab
+
             // Deactivate all tabs and hide content
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(tc => tc.classList.remove('active'));
 
-            // Activate the clicked tab and show its content
+            // Activate clicked tab and its content
             this.classList.add('active');
-            document.getElementById(`${target}-tab`).classList.add('active');
+            const content = document.getElementById(`${target}-tab`);
+            if (content) {
+                content.classList.add('active');
+                console.log('Activated content:', content); // Debug activated content
+            } else {
+                console.error(`Content for tab "${target}" not found.`);
+            }
         });
     });
+});
+
 
     // Function to show notifications
     function showNotification(message, type = 'info') {
