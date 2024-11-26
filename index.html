@@ -172,7 +172,12 @@ input:focus, select:focus {
 
     <h3>Daily Rate</h3>
     <div id="daily-rate-section"></div>
-
+    <!-- Buttons for Daily Rate Section -->
+    <div id="daily-rate-actions">
+    <button class="btn" id="save-rates-btn">Save Rates</button>
+    <button class="btn" id="clear-rates-btn">Clear Rates</button>
+    <button class="btn" id="edit-rates-btn">Edit Rates</button>
+    </div>
     <h3>Add/Edit Supplier</h3>
     <div class="form-row">
         <label for="supplier-name">Supplier Name</label>
@@ -1098,6 +1103,169 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('daily-rate-section')?.addEventListener('input', () => {
         saveDailyRates();
     });
+});
+
+// Add DOMContentLoaded Event Listener
+document.addEventListener('DOMContentLoaded', function () {
+    const addSupplierButton = document.getElementById('add-supplier-btn');
+    const cancelEditButton = document.getElementById('cancel-edit-btn');
+    const saveRatesButton = document.getElementById('save-rates-btn');
+    const clearRatesButton = document.getElementById('clear-rates-btn');
+    const editRatesButton = document.getElementById('edit-rates-btn');
+
+    let editingSupplierIndex = -1;
+
+    // Edit Supplier
+    function editSupplier(index) {
+        const supplier = suppliers[index];
+        document.getElementById('supplier-name').value = supplier.name;
+        document.getElementById('service-type').value = supplier.services[0].serviceType;
+        document.getElementById('supplier-status').checked = supplier.isActive;
+
+        // Populate amount limits
+        document.getElementById('amount-limits-section').innerHTML = '';
+        supplier.services[0].amountLimits.forEach(limit => {
+            const div = document.createElement('div');
+            div.classList.add('amount-range-item');
+            div.innerHTML = `
+                <input type="text" class="amount-range" value="${limit.limit}" />
+                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>`;
+            document.getElementById('amount-limits-section').appendChild(div);
+        });
+
+        // Populate service charges
+        document.getElementById('service-charge-section').innerHTML = '';
+        supplier.services[0].serviceCharges.forEach(charge => {
+            const div = document.createElement('div');
+            div.classList.add('service-charge-item');
+            div.innerHTML = `
+                <input type="text" class="service-condition" value="${charge.condition}" />
+                <input type="text" class="service-charge" value="${charge.charge}" />
+                <button class="remove-item-btn" onclick="removeItem(this)">Remove</button>`;
+            document.getElementById('service-charge-section').appendChild(div);
+        });
+
+        editingSupplierIndex = index;
+        toggleEditMode(true);
+    }
+
+    // Cancel Edit
+    cancelEditButton.addEventListener('click', function () {
+        editingSupplierIndex = -1;
+        clearSupplierForm();
+        toggleEditMode(false);
+    });
+
+    // Save Edit
+    addSupplierButton.addEventListener('click', function () {
+        const name = document.getElementById('supplier-name').value.trim();
+        const serviceType = document.getElementById('service-type').value;
+        const isActive = document.getElementById('supplier-status').checked;
+
+        const amountLimits = Array.from(document.querySelectorAll('.amount-range'))
+            .map(input => input.value.trim())
+            .filter(limit => limit);
+
+        const serviceCharges = Array.from(document.querySelectorAll('.service-charge-item')).map(item => {
+            const condition = item.querySelector('.service-condition').value.trim();
+            const charge = item.querySelector('.service-charge').value.trim();
+            return { condition, charge };
+        });
+
+        if (!name || !serviceType || amountLimits.length === 0) {
+            alert('Please fill out all required fields.');
+            return;
+        }
+
+        const supplierData = {
+            name,
+            isActive,
+            services: [{
+                serviceType,
+                amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
+                serviceCharges
+            }]
+        };
+
+        if (editingSupplierIndex === -1) {
+            suppliers.push(supplierData);
+            showNotification(`Supplier "${name}" added successfully!`, 'success');
+        } else {
+            suppliers[editingSupplierIndex] = supplierData;
+            editingSupplierIndex = -1;
+            showNotification(`Supplier "${name}" updated successfully!`, 'success');
+        }
+
+        localStorage.setItem('suppliers', JSON.stringify(suppliers));
+        updateSupplierTables();
+        updateDailyRateSection();
+        clearSupplierForm();
+        toggleEditMode(false);
+    });
+
+    // Toggle Edit Mode
+    function toggleEditMode(isEditMode) {
+        if (isEditMode) {
+            addSupplierButton.textContent = 'Save Edit';
+            cancelEditButton.style.display = 'inline-block';
+        } else {
+            addSupplierButton.textContent = 'Add Supplier';
+            cancelEditButton.style.display = 'none';
+        }
+    }
+
+    // Save Rates
+    saveRatesButton.addEventListener('click', saveDailyRates);
+
+    // Clear Rates
+    clearRatesButton.addEventListener('click', function () {
+        document.querySelectorAll('#daily-rate-section input').forEach(input => {
+            input.value = '';
+        });
+        saveDailyRates();
+    });
+
+    // Edit Rates
+    editRatesButton.addEventListener('click', function () {
+        document.querySelectorAll('#daily-rate-section input').forEach(input => {
+            input.disabled = false;
+        });
+    });
+
+    // Function to Save Daily Rates
+    function saveDailyRates() {
+        document.querySelectorAll('#daily-rate-section input').forEach(input => {
+            const supplierName = input.dataset.supplier;
+            const serviceType = input.dataset.service;
+            const limit = input.dataset.limit;
+            const rate = parseFloat(input.value);
+
+            const supplier = suppliers.find(s => s.name === supplierName);
+            if (supplier) {
+                const service = supplier.services.find(s => s.serviceType === serviceType);
+                if (service) {
+                    const amountLimit = service.amountLimits.find(a => a.limit === limit);
+                    if (amountLimit) {
+                        amountLimit.rate = isNaN(rate) ? null : rate;
+                    }
+                }
+            }
+        });
+
+        localStorage.setItem('suppliers', JSON.stringify(suppliers));
+        showNotification('Daily rates saved successfully!', 'success');
+        updateDailyRateSection();
+    }
+
+    // Clear Supplier Form
+    function clearSupplierForm() {
+        document.getElementById('supplier-name').value = '';
+        document.getElementById('service-type').value = '';
+        document.getElementById('supplier-status').checked = false;
+        document.getElementById('amount-limits-section').innerHTML = '';
+        document.getElementById('service-charge-section').innerHTML = '';
+        editingSupplierIndex = -1;
+    }
 });
 
      // Add Order Functionality
