@@ -981,55 +981,51 @@ function createSupplierRow(supplier, supplierIndex, service) {
         'alipay': document.getElementById('alipay-table-body')
     };
 
-    // Debug: Log tables and their elements
-    console.log('Tables:', Object.keys(tables));
-
     // Clear existing rows
-    Object.values(tables).forEach((table, key) => {
-        if (table) {
-            table.innerHTML = ''; // Clear rows
-        } else {
-            console.warn(`Table body missing for service type key: ${key}`);
-        }
+    Object.values(tables).forEach(table => {
+        if (table) table.innerHTML = '';
     });
 
-    // Debug: Log suppliers array
+    // Verify suppliers
     console.log('Suppliers:', suppliers);
     if (!suppliers || suppliers.length === 0) {
-        console.warn('No suppliers found. Skipping table update.');
+        console.warn('No suppliers to populate.');
         return;
     }
 
-    // Populate tables
     suppliers.forEach((supplier, supplierIndex) => {
         if (!supplier.services || supplier.services.length === 0) {
             console.warn(`Supplier "${supplier.name}" has no services.`);
-            return; // Skip suppliers with no services
+            return;
         }
 
         supplier.services.forEach(service => {
-            const serviceTypeKey = service.serviceType.replace(/_/g, '-').toLowerCase();
-            const table = tables[serviceTypeKey];
+            const table = tables[service.serviceType];
             if (!table) {
-                console.error(`Table for service type "${service.serviceType}" not found.`);
-                return; // Skip invalid service types
+                console.error(`Table not found for service type: "${service.serviceType}"`);
+                return;
             }
 
-            try {
-                const row = createSupplierRow(supplier, supplierIndex, service);
-                if (row) {
-                    console.log(`Appending row for service: ${service.serviceType}`);
-                    table.appendChild(row);
-                } else {
-                    console.warn(`Row creation failed for service: ${service.serviceType}`);
-                }
-            } catch (error) {
-                console.error('Error creating or appending row:', error);
-            }
+            // Create and append row
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${supplier.name}</td>
+                <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
+                <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+                <td>
+                    <button class="edit-btn">Edit</button>
+                    <button class="delete-btn">Delete</button>
+                </td>
+            `;
+
+            row.querySelector('.edit-btn').addEventListener('click', () => editSupplier(supplierIndex));
+            row.querySelector('.delete-btn').addEventListener('click', () => deleteSupplier(supplierIndex));
+
+            table.appendChild(row);
         });
     });
 
-    console.log('Supplier tables updated successfully.');
+    console.log('Supplier tables updated.');
 }
 
 // Edit Supplier
