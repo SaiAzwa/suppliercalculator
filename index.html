@@ -574,6 +574,7 @@ document.addEventListener('DOMContentLoaded', function () {
             toggleEditMode(false); // Exit edit mode
         });
     }
+});
 
     // Toggle edit mode
     function toggleEditMode(isEditMode) {
@@ -639,8 +640,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('Updating daily rate section...');
         // Your implementation here
     }
-});
-
 
     function updateSupplierTables() {
     const tables = {
@@ -820,27 +819,29 @@ function createSupplierRow(supplier, supplierIndex, service) {
 
     // Edit Supplier
     function editSupplier(index) {
-    if (index < 0 || index >= suppliers.length) {
-        showNotification('Error: Supplier not found.', 'error');
-        return;
-    }
+        if (index < 0 || index >= suppliers.length) {
+            showNotification('Error: Supplier not found.', 'error');
+            return;
+        }
 
-    const supplier = suppliers[index];
-    if (!supplier || !supplier.services || supplier.services.length === 0) {
-        showNotification('Error: Supplier data is incomplete.', 'error');
-        return;
-    }
+        const supplier = suppliers[index];
+        if (!supplier || !supplier.services || supplier.services.length === 0) {
+            showNotification('Error: Supplier data is incomplete.', 'error');
+            return;
+        }
 
-    const nameInput = document.getElementById('supplier-name');
-    const serviceTypeInput = document.getElementById('service-type');
-    const statusCheckbox = document.getElementById('supplier-status');
-    const amountLimitsSection = document.getElementById('amount-limits-section');
-    const serviceChargeSection = document.getElementById('service-charge-section');
+        const nameInput = document.getElementById('supplier-name');
+        const serviceTypeInput = document.getElementById('service-type');
+        const statusCheckbox = document.getElementById('supplier-status');
+        const amountLimitsSection = document.getElementById('amount-limits-section');
+        const serviceChargeSection = document.getElementById('service-charge-section');
 
-    if (!nameInput || !serviceTypeInput || !statusCheckbox || !amountLimitsSection || !serviceChargeSection) {
-        showNotification('Error: Supplier form elements are missing.', 'error');
-        return;
+        if (!nameInput || !serviceTypeInput || !statusCheckbox || !amountLimitsSection || !serviceChargeSection) {
+            showNotification('Error: Supplier form elements are missing.', 'error');
+            return;
+        }
     }
+});
 
     nameInput.value = supplier.name;
     serviceTypeInput.value = supplier.services[0].serviceType;
@@ -880,7 +881,6 @@ function createSupplierRow(supplier, supplierIndex, service) {
     editingSupplierIndex = index;
     toggleEditMode(true);
     showNotification('You have entered edit mode.', 'info');
-}
 
     // Clear Supplier Form
     function clearSupplierForm() {
