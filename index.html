@@ -603,30 +603,30 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Notification Function
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
+    function showNotification(message, type = 'info', duration = 3000) {
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) existingNotification.remove();
 
-        // Notification styling
-        notification.style.position = 'fixed';
-        notification.style.bottom = '20px';
-        notification.style.right = '20px';
-        notification.style.backgroundColor = type === 'success' ? '#10b981' : '#f59e0b';
-        notification.style.color = 'white';
-        notification.style.padding = '15px';
-        notification.style.borderRadius = '8px';
-        notification.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)';
-        notification.style.fontSize = '16px';
-        notification.style.zIndex = 1000; // Ensure it's above other elements
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.position = 'fixed';
+    notification.style.bottom = '20px';
+    notification.style.right = '20px';
+    notification.style.backgroundColor = type === 'success' ? '#10b981' : '#f59e0b';
+    notification.style.color = 'white';
+    notification.style.padding = '15px';
+    notification.style.borderRadius = '8px';
+    notification.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)';
+    notification.style.fontSize = '16px';
+    notification.style.zIndex = 1000;
 
-        document.body.appendChild(notification);
+    document.body.appendChild(notification);
 
-        // Auto-remove notification after 3 seconds
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
+    setTimeout(() => {
+        notification.remove();
+    }, duration);
+}
 
     // Update Supplier Tables (Placeholder: Ensure this is implemented)
     function updateSupplierTables() {
