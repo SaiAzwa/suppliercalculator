@@ -642,8 +642,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-    // Update Supplier Tables
-function updateSupplierTables() {
+    function updateSupplierTables() {
     const tables = {
         'bank-express': document.getElementById('bank-express-table-body'),
         'bank-saver': document.getElementById('bank-saver-table-body'),
@@ -652,42 +651,59 @@ function updateSupplierTables() {
         'alipay': document.getElementById('alipay-table-body')
     };
 
-    // Clear existing rows
+    // Clear existing rows safely
     Object.values(tables).forEach(table => {
-        if (table) table.innerHTML = '';
+        if (table) {
+            table.innerHTML = ''; // Clear rows
+        } else {
+            console.warn('Table body missing for one or more service types.');
+        }
     });
 
+    if (!suppliers || suppliers.length === 0) {
+        console.warn('No suppliers found. Skipping table update.');
+        return;
+    }
+
     suppliers.forEach((supplier, supplierIndex) => {
-        if (!supplier.services || supplier.services.length === 0) return;
+        if (!supplier.services || supplier.services.length === 0) {
+            console.warn(`Supplier "${supplier.name}" has no services.`);
+            return; // Skip suppliers with no services
+        }
 
         supplier.services.forEach(service => {
             const table = tables[service.serviceType];
             if (!table) {
-                console.error(`Invalid service type: ${service.serviceType}`);
-                return;
+                console.error(`Invalid service type: "${service.serviceType}" for supplier "${supplier.name}"`);
+                return; // Skip invalid service types
             }
 
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${supplier.name}</td>
-                <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
-                <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-                <td>
-                    <button class="edit-btn">Edit</button>
-                    <button class="delete-btn">Delete</button>
-                </td>
-            `;
-
-            // Avoid duplicate listeners
-            row.querySelector('.edit-btn').onclick = () => editSupplier(supplierIndex);
-            row.querySelector('.delete-btn').onclick = () => deleteSupplier(supplierIndex);
-
+            const row = createSupplierRow(supplier, supplierIndex, service);
             table.appendChild(row);
         });
     });
+
+    console.log('Supplier tables updated successfully.');
 }
 
-    console.log('Supplier tables updated.'); // Debugging
+// Helper function to create a table row for a supplier service
+function createSupplierRow(supplier, supplierIndex, service) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${supplier.name}</td>
+        <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
+        <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+        <td>
+            <button class="edit-btn">Edit</button>
+            <button class="delete-btn">Delete</button>
+        </td>
+    `;
+
+    // Attach event listeners to the buttons
+    row.querySelector('.edit-btn').addEventListener('click', () => editSupplier(supplierIndex));
+    row.querySelector('.delete-btn').addEventListener('click', () => deleteSupplier(supplierIndex));
+
+    return row;
 }
 
     // Add or Update Supplier
