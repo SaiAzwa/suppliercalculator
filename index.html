@@ -477,17 +477,6 @@ document.addEventListener('DOMContentLoaded', function () {
 // Add Supplier Functionality
 document.addEventListener('DOMContentLoaded', function () {
     const addSupplierButton = document.getElementById('add-supplier-btn');
-    const cancelEditButton = document.getElementById('cancel-edit-btn'); // Add this to toggle edit mode
-    let suppliers = [];
-    let editingSupplierIndex = -1;
-
-    // Load suppliers from localStorage on page load
-    const storedSuppliers = localStorage.getItem('suppliers');
-    if (storedSuppliers) {
-        suppliers = JSON.parse(storedSuppliers);
-        updateSupplierTables(); // Ensure tables are populated
-    }
-
     if (addSupplierButton) {
         addSupplierButton.addEventListener('click', () => {
             console.log('Add Supplier Button Clicked'); // Log button click
@@ -505,12 +494,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     return { condition, charge };
                 })
                 .filter(charge => charge.condition && charge.charge); // Remove incomplete entries
-            const additionalQuestions = Array.from(document.querySelectorAll('.additional-question-item'))
-                .map(item => {
-                    const label = item.querySelector('.question-label')?.textContent.trim();
-                    const value = item.querySelector('.question-answer')?.value.trim();
-                    return { label, value };
-                });
             const isActive = document.getElementById('supplier-status')?.checked;
 
             // Validation with detailed error messages
@@ -537,106 +520,85 @@ document.addEventListener('DOMContentLoaded', function () {
                 services: [{
                     serviceType,
                     amountLimits: amountLimits.map(limit => ({ limit, rate: null })),
-                    serviceCharges,
-                    additionalQuestions
+                    serviceCharges
                 }]
             };
 
             console.log('Supplier Data Prepared:', supplierData); // Log supplier data
 
+            // Add or update supplier
+            if (typeof suppliers === 'undefined') {
+                window.suppliers = []; // Ensure suppliers array exists
+            }
+
             if (editingSupplierIndex === -1) {
-                // Add new supplier
                 suppliers.push(supplierData);
-                showNotification(`Supplier "${name}" added successfully!`, 'success');
+                console.log(`Supplier "${name}" added successfully`);
             } else {
-                // Update existing supplier
                 suppliers[editingSupplierIndex] = supplierData;
                 editingSupplierIndex = -1;
-                addSupplierButton.textContent = 'Add Supplier'; // Reset button label
-                showNotification(`Supplier "${name}" updated successfully!`, 'success');
-                toggleEditMode(false); // Exit edit mode
+                addSupplierButton.textContent = 'Add Supplier';
+                console.log(`Supplier "${name}" updated successfully`);
             }
 
             // Save to localStorage
             localStorage.setItem('suppliers', JSON.stringify(suppliers));
 
             // Update UI
-            updateSupplierTables();
-            updateDailyRateSection();
-            clearSupplierForm(); // Clear the form for new entries
+            if (typeof updateSupplierTables === 'function') {
+                updateSupplierTables(); // Refresh supplier tables
+            }
+            if (typeof updateDailyRateSection === 'function') {
+                updateDailyRateSection(); // Refresh daily rate section
+            }
+            if (typeof clearSupplierForm === 'function') {
+                clearSupplierForm(); // Clear the form for new entries
+            }
+
+            // Show success notification
+            showNotification(`Supplier "${name}" has been added/updated successfully!`, 'success');
         });
     } else {
         console.error('Add Supplier Button not found'); // Log missing button
     }
-
-    if (cancelEditButton) {
-        cancelEditButton.addEventListener('click', () => {
-            editingSupplierIndex = -1;
-            toggleEditMode(false); // Exit edit mode
-        });
-    }
-
-    // Toggle edit mode
-    function toggleEditMode(isEditMode) {
-        if (isEditMode) {
-            addSupplierButton.textContent = 'Save Changes';
-            cancelEditButton.style.display = 'inline-block';
-        } else {
-            addSupplierButton.textContent = 'Add Supplier';
-            cancelEditButton.style.display = 'none';
-            clearSupplierForm(); // Reset the form when exiting edit mode
-        }
-    }
-
-    // Clear Supplier Form
-    function clearSupplierForm() {
-        document.getElementById('supplier-name').value = '';
-        document.getElementById('service-type').value = '';
-        document.getElementById('supplier-status').checked = false;
-        document.getElementById('amount-limits-section').innerHTML = '';
-        document.getElementById('service-charge-section').innerHTML = '';
-        document.getElementById('additional-questions-container').innerHTML = '';
-    }
-
-    // Notification Function
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
-
-        // Notification styling
-        notification.style.position = 'fixed';
-        notification.style.bottom = '20px';
-        notification.style.right = '20px';
-        notification.style.backgroundColor = type === 'success' ? '#10b981' : '#f59e0b';
-        notification.style.color = 'white';
-        notification.style.padding = '15px';
-        notification.style.borderRadius = '8px';
-        notification.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)';
-        notification.style.fontSize = '16px';
-        notification.style.zIndex = 1000; // Ensure it's above other elements
-
-        document.body.appendChild(notification);
-
-        // Auto-remove notification after 3 seconds
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
-
-    // Update Supplier Tables (Placeholder: Ensure this is implemented)
-    function updateSupplierTables() {
-        console.log('Updating supplier tables...');
-        // Your implementation here
-    }
-
-    // Update Daily Rate Section (Placeholder: Ensure this is implemented)
-    function updateDailyRateSection() {
-        console.log('Updating daily rate section...');
-        // Your implementation here
-    }
 });
 
+// Notification Function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+
+    // Notification styling
+    notification.style.position = 'fixed';
+    notification.style.bottom = '20px';
+    notification.style.right = '20px';
+    notification.style.backgroundColor = type === 'success' ? '#10b981' : '#f59e0b';
+    notification.style.color = 'white';
+    notification.style.padding = '15px';
+    notification.style.borderRadius = '8px';
+    notification.style.boxShadow = '0px 4px 15px rgba(0, 0, 0, 0.2)';
+    notification.style.fontSize = '16px';
+    notification.style.zIndex = 1000; // Ensure it's above other elements
+
+    // Add notification to the DOM
+    document.body.appendChild(notification);
+
+    // Auto-remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    let suppliers = [];
+    let editingSupplierIndex = -1;
+
+    // Load suppliers from localStorage on page load
+    const storedSuppliers = localStorage.getItem('suppliers');
+    if (storedSuppliers) {
+        suppliers = JSON.parse(storedSuppliers);
+    }
 
     // Update Supplier Tables
     function updateSupplierTables() {
