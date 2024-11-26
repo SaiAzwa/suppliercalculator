@@ -641,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Your implementation here
     }
 
-    function updateSupplierTables() {
+   function updateSupplierTables() {
     const tables = {
         'bank-express': document.getElementById('bank-express-table-body'),
         'bank-saver': document.getElementById('bank-saver-table-body'),
@@ -650,20 +650,23 @@ document.addEventListener('DOMContentLoaded', function () {
         'alipay': document.getElementById('alipay-table-body')
     };
 
-    // Clear existing rows safely
-    Object.values(tables).forEach(table => {
+    // Clear existing rows
+    Object.values(tables).forEach((table, key) => {
         if (table) {
             table.innerHTML = ''; // Clear rows
         } else {
-            console.warn('Table body missing for one or more service types.');
+            console.warn(`Table body missing for service type key: ${key}`);
         }
     });
 
+    // Debug: Check suppliers array
+    console.log('Suppliers data:', suppliers);
     if (!suppliers || suppliers.length === 0) {
         console.warn('No suppliers found. Skipping table update.');
         return;
     }
 
+    // Populate tables
     suppliers.forEach((supplier, supplierIndex) => {
         if (!supplier.services || supplier.services.length === 0) {
             console.warn(`Supplier "${supplier.name}" has no services.`);
@@ -671,14 +674,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         supplier.services.forEach(service => {
-            const table = tables[service.serviceType];
+            const serviceTypeKey = service.serviceType.replace(/_/g, '-').toLowerCase();
+            const table = tables[serviceTypeKey];
+
             if (!table) {
                 console.error(`Invalid service type: "${service.serviceType}" for supplier "${supplier.name}"`);
                 return; // Skip invalid service types
             }
 
-            const row = createSupplierRow(supplier, supplierIndex, service);
-            table.appendChild(row);
+            try {
+                const row = createSupplierRow(supplier, supplierIndex, service);
+                if (row) {
+                    table.appendChild(row);
+                } else {
+                    console.warn(`Row creation failed for service: ${service.serviceType}`);
+                }
+            } catch (error) {
+                console.error('Error creating row:', error);
+            }
         });
     });
 
@@ -687,22 +700,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Helper function to create a table row for a supplier service
 function createSupplierRow(supplier, supplierIndex, service) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td>${supplier.name}</td>
-        <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
-        <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-        <td>
-            <button class="edit-btn">Edit</button>
-            <button class="delete-btn">Delete</button>
-        </td>
-    `;
+    try {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${supplier.name}</td>
+            <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
+            <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
+            <td>
+                <button class="edit-btn">Edit</button>
+                <button class="delete-btn">Delete</button>
+            </td>
+        `;
 
-    // Attach event listeners to the buttons
-    row.querySelector('.edit-btn').addEventListener('click', () => editSupplier(supplierIndex));
-    row.querySelector('.delete-btn').addEventListener('click', () => deleteSupplier(supplierIndex));
+        row.querySelector('.edit-btn').addEventListener('click', () => editSupplier(supplierIndex));
+        row.querySelector('.delete-btn').addEventListener('click', () => deleteSupplier(supplierIndex));
 
-    return row;
+        return row;
+    } catch (error) {
+        console.error('Error creating supplier row:', error);
+        return null;
+    }
 }
 
     // Add or Update Supplier
