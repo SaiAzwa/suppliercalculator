@@ -1,48 +1,43 @@
-// Supplier Sync Functions
-
-const googleSheetApiUrl = ""; // Replace with your Google Sheets API URL
+const googleSheetApiUrl = "https://script.google.com/macros/s/AKfycbyYHJH-TADBBuoPxL5mpWoFcNWd0jiagGmmcU-ImLiY9ztKEIjUEMFTeTeMZ6-JOFOy/exec";
 
 async function fetchSuppliersFromGoogleSheet() {
     try {
         const response = await fetch(googleSheetApiUrl);
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch data from Google Sheets.');
-        }
-
+        if (!response.ok) throw new Error('Failed to fetch data from Google Sheets.');
+        
         const data = await response.json();
+        if (data.status !== "success") throw new Error(data.message || 'Unknown error occurred.');
 
-        if (data.status === "success") {
-            const suppliersFromSheet = data.data;
-
-            const transformedSuppliers = suppliersFromSheet.map(sheetSupplier => ({
-                name: sheetSupplier["Name"],
-                isActive: sheetSupplier["Status"] === "Active",
-                services: JSON.parse(sheetSupplier["Services"]).map(service => ({
-                    serviceType: service.serviceType,
-                    amountLimits: service.amountLimits.map(limit => ({
-                        limit: limit.limit,
-                        rate: limit.rate || null
-                    })),
-                    serviceCharges: service.serviceCharges,
-                    additionalQuestions: service.additionalQuestions || []
-                }))
-            }));
-
-            localStorage.setItem('suppliers', JSON.stringify(transformedSuppliers));
-            window.suppliers = transformedSuppliers;
-
-            if (typeof updateSupplierTables === 'function') {
-                updateSupplierTables();
+        const suppliersFromSheet = data.data;
+        const transformedSuppliers = [];
+        
+        suppliersFromSheet.forEach(sheetSupplier => {
+            const existingSupplier = transformedSuppliers.find(s => s.name === sheetSupplier.Name);
+            const service = {
+                serviceType: sheetSupplier['Service Type'],
+                amountLimits: JSON.parse(sheetSupplier['Amount Limits']),
+                serviceCharges: JSON.parse(sheetSupplier['Service Charges']),
+                additionalQuestions: JSON.parse(sheetSupplier['Additional Questions'])
+            };
+            
+            if (existingSupplier) {
+                existingSupplier.services.push(service);
+            } else {
+                transformedSuppliers.push({
+                    name: sheetSupplier.Name,
+                    isActive: true,
+                    services: [service]
+                });
             }
-            if (typeof updateDailyRateSection === 'function') {
-                updateDailyRateSection();
-            }
+        });
 
-            showNotification('Suppliers successfully fetched and loaded from Google Sheets.', 'success');
-        } else {
-            throw new Error(data.message || 'Unknown error occurred.');
-        }
+        localStorage.setItem('suppliers', JSON.stringify(transformedSuppliers));
+        window.suppliers = transformedSuppliers;
+
+        if (typeof updateSupplierTables === 'function') updateSupplierTables();
+        if (typeof updateDailyRateSection === 'function') updateDailyRateSection();
+
+        showNotification('Suppliers successfully fetched and loaded from Google Sheets.', 'success');
     } catch (error) {
         console.error('Error fetching suppliers:', error);
         showNotification('An error occurred while fetching suppliers from Google Sheets.', 'error');
@@ -58,34 +53,29 @@ async function syncSuppliersToGoogleSheet() {
         }
 
         const suppliers = JSON.parse(suppliersData);
+        const formattedData = [];
 
-        const formattedData = suppliers.map(supplier => ({
-            Name: supplier.name,
-            Status: supplier.isActive ? 'Active' : 'Inactive',
-            Services: JSON.stringify(supplier.services.map(service => ({
-                serviceType: service.serviceType,
-                amountLimits: service.amountLimits.map(a => ({
-                    limit: a.limit,
-                    rate: a.rate
-                })),
-                serviceCharges: service.serviceCharges,
-                additionalQuestions: service.additionalQuestions
-            })))
-        }));
+        suppliers.forEach(supplier => {
+            supplier.services.forEach(service => {
+                formattedData.push({
+                    Name: supplier.name,
+                    'Service Type': service.serviceType,
+                    'Amount Limits': JSON.stringify(service.amountLimits),
+                    'Service Charges': JSON.stringify(service.serviceCharges),
+                    'Additional Questions': JSON.stringify(service.additionalQuestions)
+                });
+            });
+        });
 
         const response = await fetch(googleSheetApiUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ suppliers: formattedData })
         });
 
-        if (response.ok) {
-            showNotification('Suppliers successfully synced to Google Sheet.', 'success');
-        } else {
-            throw new Error('Failed to sync suppliers. Check your Google Sheet API setup.');
-        }
+        if (!response.ok) throw new Error('Failed to sync suppliers. Check your Google Sheet API setup.');
+        
+        showNotification('Suppliers successfully synced to Google Sheet.', 'success');
     } catch (error) {
         console.error('Error syncing suppliers:', error);
         showNotification('An error occurred while syncing suppliers.', 'error');
