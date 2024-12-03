@@ -59,10 +59,10 @@ async function syncSuppliersToGoogleSheet() {
             supplier.services.forEach(service => {
                 formattedData.push({
                     Name: supplier.name,
-                    'Service Type': service.serviceType,
-                    'Amount Limits': JSON.stringify(service.amountLimits),
-                    'Service Charges': JSON.stringify(service.serviceCharges),
-                    'Additional Questions': JSON.stringify(service.additionalQuestions)
+                    serviceType: service.serviceType,
+                    amountLimits: JSON.stringify(service.amountLimits),
+                    serviceCharges: JSON.stringify(service.serviceCharges),
+                    additionalQuestions: JSON.stringify(service.additionalQuestions)
                 });
             });
         });
