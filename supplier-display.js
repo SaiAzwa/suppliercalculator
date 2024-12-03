@@ -1,5 +1,3 @@
-// Supplier Display Section
-
 document.addEventListener('DOMContentLoaded', function () {
     function updateSupplierTables() {
         const tables = {
@@ -93,21 +91,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Toggle Supplier Management Section visibility
-    document.getElementById('toggleManagementBtn').addEventListener('click', function () {
-        const section = document.getElementById('supplierManagementSection');
-        section.classList.toggle('hidden');
-        this.textContent = section.classList.contains('hidden') ? 'Show Supplier Management' : 'Hide Supplier Management';
-    });
-
-    // Initial call to populate supplier tables
     updateSupplierTables();
-
-    // Expose updateSupplierTables function globally if needed
     window.updateSupplierTables = updateSupplierTables;
 });
 
-// Utility function for showing notifications
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.textContent = message;
