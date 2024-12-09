@@ -212,3 +212,30 @@ function showNotification(message, type = 'info') {
         notification.remove();
     }, 3000);
 }
+
+function updateDailyRateSection() {
+    const dailyRateSection = document.getElementById('daily-rate-section');
+    if (!dailyRateSection) return;
+
+    dailyRateSection.innerHTML = '';
+
+    suppliers.forEach(supplier => {
+        supplier.services.forEach(service => {
+            const header = document.createElement('h4');
+            header.textContent = `${supplier.name} - ${service.serviceType}`;
+            dailyRateSection.appendChild(header);
+
+            service.amountLimits.forEach(limit => {
+                const rateInput = document.createElement('input');
+                rateInput.type = 'number';
+                rateInput.value = limit.rate || '';
+                rateInput.placeholder = `Rate for ${limit.limit}`;
+                rateInput.addEventListener('change', (e) => {
+                    limit.rate = parseFloat(e.target.value);
+                    localStorage.setItem('suppliers', JSON.stringify(suppliers));
+                });
+                dailyRateSection.appendChild(rateInput);
+            });
+        });
+    });
+}
