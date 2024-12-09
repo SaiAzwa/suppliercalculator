@@ -1,4 +1,4 @@
-const googleSheetApiUrl = "https://script.google.com/macros/s/AKfycbybM7xm5wvVelWOvvQev2rDMlkYCIeAdpMgthYEkbWxFXbR08N2AMIfSI_F0BJHug48/exec";
+const googleSheetApiUrl = "https://script.google.com/macros/s/AKfycbyWy7S3tjws4v5dePDH21WLZv4mDv7Ylm2I1F0Y_5sAsxjAYMTtjRpv8cktB5skWSAy/exec";
 
 async function fetchSuppliersFromGoogleSheet() {
     try {
