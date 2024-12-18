@@ -2,34 +2,63 @@ const googleSheetApiUrl = "https://script.google.com/macros/s/AKfycbzXX-_w6WW5eW
 
 async function fetchSuppliersFromGoogleSheet() {
    try {
+       console.log('Starting fetch...');
        const response = await fetch(googleSheetApiUrl);
-       if (!response.ok) throw new Error('Failed to fetch data from Google Sheets.');
+       console.log('Response received:', response);
+       
+       if (!response.ok) {
+           console.error('Response not OK:', response.status, response.statusText);
+           throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+       }
        
        const data = await response.json();
-       if (data.status !== "success") throw new Error(data.message || 'Unknown error occurred.');
+       console.log('Data received:', data);
+       
+       if (data.status !== "success") {
+           console.error('Data status not success:', data);
+           throw new Error(data.message || 'Unknown error occurred.');
+       }
 
        const suppliersFromSheet = data.data;
+       console.log('Suppliers from sheet:', suppliersFromSheet);
+       
+       if (!Array.isArray(suppliersFromSheet)) {
+           throw new Error('Invalid data format received from server');
+       }
+
        const transformedSuppliers = [];
        
        suppliersFromSheet.forEach(sheetSupplier => {
-           const existingSupplier = transformedSuppliers.find(s => s.name === sheetSupplier.Name);
-           const service = {
-               serviceType: sheetSupplier['Service Type'],
-               amountLimits: JSON.parse(sheetSupplier['Amount Limits']),
-               serviceCharges: JSON.parse(sheetSupplier['Service Charges']),
-               additionalQuestions: JSON.parse(sheetSupplier['Additional Questions'])
-           };
-           
-           if (existingSupplier) {
-               existingSupplier.services.push(service);
-           } else {
-               transformedSuppliers.push({
-                   name: sheetSupplier.Name,
-                   isActive: true,
-                   services: [service]
-               });
+           try {
+               const existingSupplier = transformedSuppliers.find(s => s.name === sheetSupplier.Name);
+               const service = {
+                   serviceType: sheetSupplier['Service Type'],
+                   amountLimits: typeof sheetSupplier['Amount Limits'] === 'string' 
+                       ? JSON.parse(sheetSupplier['Amount Limits']) 
+                       : sheetSupplier['Amount Limits'],
+                   serviceCharges: typeof sheetSupplier['Service Charges'] === 'string'
+                       ? JSON.parse(sheetSupplier['Service Charges'])
+                       : sheetSupplier['Service Charges'],
+                   additionalQuestions: typeof sheetSupplier['Additional Questions'] === 'string'
+                       ? JSON.parse(sheetSupplier['Additional Questions'])
+                       : sheetSupplier['Additional Questions']
+               };
+               
+               if (existingSupplier) {
+                   existingSupplier.services.push(service);
+               } else {
+                   transformedSuppliers.push({
+                       name: sheetSupplier.Name,
+                       isActive: true,
+                       services: [service]
+                   });
+               }
+           } catch (e) {
+               console.error('Error processing supplier:', sheetSupplier, e);
            }
        });
+
+       console.log('Transformed suppliers:', transformedSuppliers);
 
        localStorage.setItem('suppliers', JSON.stringify(transformedSuppliers));
        window.suppliers = transformedSuppliers;
@@ -40,12 +69,13 @@ async function fetchSuppliersFromGoogleSheet() {
        showNotification('Suppliers successfully fetched and loaded from Google Sheets.', 'success');
    } catch (error) {
        console.error('Error fetching suppliers:', error);
-       showNotification('An error occurred while fetching suppliers from Google Sheets.', 'error');
+       showNotification(`Error: ${error.message}`, 'error');
    }
 }
 
 async function syncSuppliersToGoogleSheet() {
    try {
+       console.log('Starting sync...');
        const suppliersData = localStorage.getItem('suppliers');
        if (!suppliersData) {
            showNotification('No suppliers to sync.', 'info');
@@ -67,13 +97,20 @@ async function syncSuppliersToGoogleSheet() {
            });
        });
 
+       console.log('Formatted data to sync:', formattedData);
+
        const response = await fetch(googleSheetApiUrl, {
            method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
+           headers: { 
+               'Content-Type': 'application/json',
+               'Accept': 'application/json'
+           },
            body: JSON.stringify({ suppliers: formattedData })
        });
 
+       console.log('Sync response received:', response);
        const result = await response.json();
+       console.log('Sync result:', result);
        
        if (!response.ok || result.status !== "success") {
            throw new Error(result.message || 'Failed to sync suppliers');
@@ -112,6 +149,19 @@ function showNotification(message, type = 'info') {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-   document.getElementById('fetch-suppliers-btn')?.addEventListener('click', fetchSuppliersFromGoogleSheet);
-   document.getElementById('sync-suppliers-btn')?.addEventListener('click', syncSuppliersToGoogleSheet);
+    const fetchBtn = document.getElementById('fetch-suppliers-btn');
+    const syncBtn = document.getElementById('sync-suppliers-btn');
+    
+    console.log('Fetch button found:', !!fetchBtn);
+    console.log('Sync button found:', !!syncBtn);
+    
+    fetchBtn?.addEventListener('click', () => {
+        console.log('Fetch button clicked');
+        fetchSuppliersFromGoogleSheet();
+    });
+    
+    syncBtn?.addEventListener('click', () => {
+        console.log('Sync button clicked');
+        syncSuppliersToGoogleSheet();
+    });
 });
