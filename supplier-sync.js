@@ -1,23 +1,21 @@
-const googleSheetApiUrl = "https://script.google.com/macros/s/AKfycbyWy7S3tjws4v5dePDH21WLZv4mDv7Ylm2I1F0Y_5sAsxjAYMTtjRpv8cktB5skWSAy/exec";
-
 async function fetchSuppliersFromGoogleSheet() {
     try {
-        const response = await fetch(googleSheetApiUrl);
-        if (!response.ok) throw new Error('Failed to fetch data from Google Sheets.');
-        
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyr-mO_PC2yVyHiFkFNej9y17KGn2yPcE2QS7OwMi1x8kdD2wLbRxXjtrIBG5b97BRg/exec");  // Added quotes around URL
         const data = await response.json();
-        if (data.status !== "success") throw new Error(data.message || 'Unknown error occurred.');
-
+        
+        if (!response.ok || data.status !== "success") {
+            throw new Error(data.message || 'Failed to fetch data from Google Sheets.');
+        }
         const suppliersFromSheet = data.data;
         const transformedSuppliers = [];
         
         suppliersFromSheet.forEach(sheetSupplier => {
             const existingSupplier = transformedSuppliers.find(s => s.name === sheetSupplier.Name);
             const service = {
-                serviceType: sheetSupplier['Service Type'],
-                amountLimits: JSON.parse(sheetSupplier['Amount Limits']),
-                serviceCharges: JSON.parse(sheetSupplier['Service Charges']),
-                additionalQuestions: JSON.parse(sheetSupplier['Additional Questions'])
+                serviceType: sheetSupplier.serviceType,
+                amountLimits: sheetSupplier.amountLimits,
+                serviceCharges: sheetSupplier.serviceCharges,
+                additionalQuestions: sheetSupplier.additionalQuestions
             };
             
             if (existingSupplier) {
@@ -30,17 +28,14 @@ async function fetchSuppliersFromGoogleSheet() {
                 });
             }
         });
-
         localStorage.setItem('suppliers', JSON.stringify(transformedSuppliers));
         window.suppliers = transformedSuppliers;
-
         if (typeof updateSupplierTables === 'function') updateSupplierTables();
         if (typeof updateDailyRateSection === 'function') updateDailyRateSection();
-
-        showNotification('Suppliers successfully fetched and loaded from Google Sheets.', 'success');
+        showNotification(`Successfully loaded ${transformedSuppliers.length} suppliers from Google Sheets.`, 'success');
     } catch (error) {
         console.error('Error fetching suppliers:', error);
-        showNotification('An error occurred while fetching suppliers from Google Sheets.', 'error');
+        showNotification(`Error: ${error.message}`, 'error');
     }
 }
 
@@ -51,10 +46,8 @@ async function syncSuppliersToGoogleSheet() {
             showNotification('No suppliers to sync.', 'info');
             return;
         }
-
         const suppliers = JSON.parse(suppliersData);
         const formattedData = [];
-
         suppliers.forEach(supplier => {
             supplier.services.forEach(service => {
                 formattedData.push({
@@ -66,48 +59,20 @@ async function syncSuppliersToGoogleSheet() {
                 });
             });
         });
-
-        const response = await fetch(googleSheetApiUrl, {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbyr-mO_PC2yVyHiFkFNej9y17KGn2yPcE2QS7OwMi1x8kdD2wLbRxXjtrIBG5b97BRg/exec", {  // Added quotes around URL
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ suppliers: formattedData })
         });
-
-        if (!response.ok) throw new Error('Failed to sync suppliers. Check your Google Sheet API setup.');
+        const result = await response.json();
         
-        showNotification('Suppliers successfully synced to Google Sheet.', 'success');
+        if (!response.ok || result.status !== "success") {
+            throw new Error(result.message || 'Failed to sync suppliers');
+        }
+        
+        showNotification(`Suppliers successfully synced to Google Sheet. ${result.rowsUpdated || ''} rows updated.`, 'success');
     } catch (error) {
         console.error('Error syncing suppliers:', error);
-        showNotification('An error occurred while syncing suppliers.', 'error');
+        showNotification(`Error: ${error.message}`, 'error');
     }
 }
-
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    
-    Object.assign(notification.style, {
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
-        color: 'white',
-        padding: '15px',
-        borderRadius: '8px',
-        boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
-        fontSize: '16px',
-        zIndex: '1000'
-    });
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('fetch-suppliers-btn')?.addEventListener('click', fetchSuppliersFromGoogleSheet);
-    document.getElementById('sync-suppliers-btn')?.addEventListener('click', syncSuppliersToGoogleSheet);
-});
