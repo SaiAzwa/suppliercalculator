@@ -2,14 +2,14 @@
 fetch('https://script.google.com/macros/s/AKfycbyqvJlkI4grVloycX6PeD5eRObZhC-5aLETkwi1jzMVKogNTA_VqZkoH8XCCyqU66Sg/exec', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ suppliers: window.suppliers }), // Use the window.suppliers or localStorage value
-    mode: 'cors', // Replace 'no-cors' with 'cors' after configuring CORS in the Apps Script
+    body: JSON.stringify({ suppliers: window.suppliers }), // Use window.suppliers here
+    mode: 'cors', // Make sure CORS is configured properly
 })
 .then(response => response.json())
 .then(data => console.log('Response:', data))
 .catch(error => console.error('Error:', error));
 
-// Fetch suppliers from Google Sheet
+// Fetch suppliers from Google Sheets and assign to window.suppliers
 async function fetchSuppliersFromGoogleSheet() {
     try {
         console.log('Starting fetch...');
@@ -62,8 +62,7 @@ async function fetchSuppliersFromGoogleSheet() {
 
         console.log('Transformed suppliers:', transformedSuppliers);
 
-        // Save the transformed suppliers to localStorage
-        localStorage.setItem('suppliers', JSON.stringify(transformedSuppliers));
+        // Save the transformed suppliers to window.suppliers
         window.suppliers = transformedSuppliers;
 
         // Update UI
@@ -77,53 +76,7 @@ async function fetchSuppliersFromGoogleSheet() {
     }
 }
 
-// Sync suppliers to Google Sheet
-async function syncSuppliersToGoogleSheet() {
-    try {
-        console.log('Starting sync...');
-        const suppliersData = localStorage.getItem('suppliers');
-        if (!suppliersData) {
-            showNotification('No suppliers to sync.', 'info');
-            return;
-        }
-
-        const suppliers = JSON.parse(suppliersData);
-        if (!Array.isArray(suppliers)) {
-            throw new Error('Invalid suppliers data in localStorage.');
-        }
-
-        const formattedData = suppliers.flatMap(supplier =>
-            supplier.services.map(service => ({
-                Name: supplier.name,
-                'Service Type': service.serviceType,
-                'Amount Limits': JSON.stringify(service.amountLimits),
-                'Service Charges': JSON.stringify(service.serviceCharges),
-                'Additional Questions': JSON.stringify(service.additionalQuestions),
-            }))
-        );
-
-        console.log('Formatted data to sync:', formattedData);
-
-        const response = await fetch(googleSheetApiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ suppliers: formattedData }),
-            mode: 'cors', // Make sure CORS is configured on your Apps Script side
-        });
-
-        const result = await response.json();
-        if (!response.ok || result.status !== "success") {
-            throw new Error(result.message || 'Failed to sync suppliers');
-        }
-
-        showNotification('Suppliers successfully synced to Google Sheet.', 'success');
-    } catch (error) {
-        console.error('Error syncing suppliers:', error);
-        showNotification(`Error syncing suppliers: ${error.message}`, 'error');
-    }
-}
-
-// Helper functions
+// Helper function to parse JSON safely
 function parseJsonSafely(jsonString) {
     try {
         return typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
@@ -133,6 +86,7 @@ function parseJsonSafely(jsonString) {
     }
 }
 
+// Show notification function
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.textContent = message;
@@ -157,14 +111,5 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Event Listeners
-document.addEventListener('click', function (event) {
-    if (event.target.id === 'fetch-suppliers-btn') {
-        console.log('Fetch button clicked');
-        fetchSuppliersFromGoogleSheet();
-    }
-    if (event.target.id === 'sync-suppliers-btn') {
-        console.log('Sync button clicked');
-        syncSuppliersToGoogleSheet();
-    }
-});
+// Call this to fetch suppliers and populate window.suppliers
+fetchSuppliersFromGoogleSheet();
