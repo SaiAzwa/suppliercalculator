@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Iterate through the suppliers array and populate the tables
         suppliers.forEach((supplier, supplierIndex) => {
+            // Ensure 'supplier.services' is an array
+            if (!Array.isArray(supplier.services)) {
+                console.error(`Supplier "${supplier.name}" does not have a valid services array.`);
+                return;
+            }
+
             supplier.services.forEach((service, serviceIndex) => {
                 const tabKey = service.serviceType;
                 if (!tables[tabKey]) {
