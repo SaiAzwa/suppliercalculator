@@ -1,8 +1,8 @@
 // POST request to sync suppliers data
-fetch('https://script.google.com/macros/s/AKfycbyqvJlkI4grVloycX6PeD5eRObZhC-5aLETkwi1jzMVKogNTA_VqZkoH8XCCyqU66Sg/exec', {
+fetch('https://script.google.com/macros/s/AKfycbxCxPbo2LbgFpDgTVmqk1aeoV345Ppf7ANvwVafJKi0JMWoMYYJVxcuS3Y0OYsLvf7I/exec', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ suppliers: supplierData }),
+    body: JSON.stringify({ suppliers: window.suppliers }), // Use the window.suppliers or localStorage value
     mode: 'cors', // Replace 'no-cors' with 'cors' after configuring CORS in the Apps Script
 })
 .then(response => response.json())
