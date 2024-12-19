@@ -3,41 +3,64 @@ document.addEventListener('DOMContentLoaded', function () {
     let suppliers = JSON.parse(localStorage.getItem('suppliers')) || [];
 
     function updateSupplierTables() {
-        const tables = {
-            'bank-express': document.getElementById('bank-express-table-body'),
-            'bank-saver': document.getElementById('bank-saver-table-body'),
-            'enterprise': document.getElementById('enterprise-table-body'),
-            'usd-transfer': document.getElementById('usd-transfer-table-body'),
-            'alipay': document.getElementById('alipay-table-body')
+        // Define table IDs and get references
+        const tableIds = {
+            'bank-express': 'bank-express-table-body',
+            'bank-saver': 'bank-saver-table-body',
+            'enterprise': 'enterprise-table-body',
+            'usd-transfer': 'usd-transfer-table-body',
+            'alipay': 'alipay-table-body'
         };
 
-        // Clear all the tables
-        Object.values(tables).forEach(table => {
-            if (table) table.innerHTML = '';
-        });
+        const tables = {};
+        
+        // Safely get table references and log warnings for missing tables
+        for (const [key, id] of Object.entries(tableIds)) {
+            const table = document.getElementById(id);
+            if (table) {
+                tables[key] = table;
+            } else {
+                console.warn(`Table with ID "${id}" not found in the DOM`);
+            }
+        }
+
+        // Clear existing tables safely
+        for (const table of Object.values(tables)) {
+            if (table && table.innerHTML !== undefined) {
+                table.innerHTML = '';
+            }
+        }
 
         // Iterate through the suppliers array and populate the tables
         suppliers.forEach((supplier, supplierIndex) => {
+            // Ensure supplier has required properties
+            if (!supplier || !supplier.services) {
+                console.warn(`Invalid supplier data at index ${supplierIndex}`);
+                return;
+            }
+
             // Ensure 'supplier.services' is an array
             if (!Array.isArray(supplier.services)) {
-                console.error(`Supplier "${supplier.name}" does not have a valid services array.`);
+                console.warn(`Supplier "${supplier.name}" does not have a valid services array`);
                 return;
             }
 
             supplier.services.forEach((service, serviceIndex) => {
                 const tabKey = service.serviceType;
                 if (!tables[tabKey]) {
-                    console.error(`Service type "${tabKey}" does not match any tab key.`);
+                    console.warn(`Table for service type "${tabKey}" not found`);
                     return;
                 }
 
                 const additionalQuestions = service.additionalQuestions || [];
                 const row = document.createElement('tr');
+                
+                // Create row content with null checks
                 row.innerHTML = `
-                    <td>${supplier.name}</td>
-                    <td>${service.amountLimits.map(a => a.limit).join(', ')}</td>
-                    <td>${service.serviceCharges.map(c => `${c.condition}: ${c.charge}`).join(', ')}</td>
-                    <td>${additionalQuestions.map(q => `${q.label}: ${q.value || 'N/A'}`).join(', ')}</td>
+                    <td>${supplier.name || 'N/A'}</td>
+                    <td>${(service.amountLimits || []).map(a => a.limit).join(', ') || 'N/A'}</td>
+                    <td>${(service.serviceCharges || []).map(c => `${c.condition}: ${c.charge}`).join(', ') || 'N/A'}</td>
+                    <td>${additionalQuestions.map(q => `${q.label}: ${q.value || 'N/A'}`).join(', ') || 'N/A'}</td>
                     <td>
                         <button class="status-toggle-btn ${supplier.isActive ? 'active' : 'inactive'}">
                             ${supplier.isActive ? 'Active' : 'Inactive'}
@@ -49,31 +72,38 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                 `;
 
-                row.querySelector('.status-toggle-btn').addEventListener('click', function () {
-                    toggleSupplierStatus(supplierIndex);
-                });
+                // Add event listeners
+                const statusBtn = row.querySelector('.status-toggle-btn');
+                const deleteBtn = row.querySelector('.delete-btn');
+                const editBtn = row.querySelector('.edit-btn');
 
-                row.querySelector('.delete-btn').addEventListener('click', function () {
-                    deleteSupplier(supplierIndex);
-                });
-
-                row.querySelector('.edit-btn').addEventListener('click', function () {
-                    editSupplier(supplierIndex, serviceIndex);
-                });
+                if (statusBtn) {
+                    statusBtn.addEventListener('click', () => toggleSupplierStatus(supplierIndex));
+                }
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', () => deleteSupplier(supplierIndex));
+                }
+                if (editBtn) {
+                    editBtn.addEventListener('click', () => editSupplier(supplierIndex, serviceIndex));
+                }
 
                 tables[tabKey].appendChild(row);
             });
         });
     }
 
+    // Rest of your code remains the same...
+    
     function toggleSupplierStatus(index) {
-        suppliers[index].isActive = !suppliers[index].isActive;
-        localStorage.setItem('suppliers', JSON.stringify(suppliers));
-        updateSupplierTables();
-        showNotification(
-            `Supplier "${suppliers[index].name}" is now ${suppliers[index].isActive ? 'Active' : 'Inactive'}!`,
-            'success'
-        );
+        if (suppliers[index]) {
+            suppliers[index].isActive = !suppliers[index].isActive;
+            localStorage.setItem('suppliers', JSON.stringify(suppliers));
+            updateSupplierTables();
+            showNotification(
+                `Supplier "${suppliers[index].name}" is now ${suppliers[index].isActive ? 'Active' : 'Inactive'}!`,
+                'success'
+            );
+        }
     }
 
     function deleteSupplier(index) {
@@ -83,50 +113,33 @@ document.addEventListener('DOMContentLoaded', function () {
         suppliers.splice(index, 1);
         localStorage.setItem('suppliers', JSON.stringify(suppliers));
         updateSupplierTables();
-        updateDailyRateSection();
+        if (typeof updateDailyRateSection === 'function') {
+            updateDailyRateSection();
+        }
         showNotification('Supplier deleted successfully!', 'success');
     }
 
+    // Initialize tabs
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', function () {
             const target = this.dataset.service;
+            if (!target) return;
 
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(tc => tc.classList.remove('active'));
 
             this.classList.add('active');
-            document.getElementById(`${target}-tab`).classList.add('active');
+            const targetTab = document.getElementById(`${target}-tab`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
         });
     });
 
+    // Initial update
     updateSupplierTables();
     window.updateSupplierTables = updateSupplierTables;
 });
-
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    
-    Object.assign(notification.style, {
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        backgroundColor: type === 'success' ? '#10b981' : '#f59e0b',
-        color: 'white',
-        padding: '15px',
-        borderRadius: '8px',
-        boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
-        fontSize: '16px',
-        zIndex: '1000'
-    });
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
