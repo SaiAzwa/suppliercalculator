@@ -1,5 +1,5 @@
 // POST request to sync suppliers data
-fetch('https://script.google.com/macros/s/AKfycbxCxPbo2LbgFpDgTVmqk1aeoV345Ppf7ANvwVafJKi0JMWoMYYJVxcuS3Y0OYsLvf7I/exec', {
+fetch('https://script.google.com/macros/s/AKfycbyqvJlkI4grVloycX6PeD5eRObZhC-5aLETkwi1jzMVKogNTA_VqZkoH8XCCyqU66Sg/exec', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ suppliers: supplierData }),
@@ -32,6 +32,7 @@ async function fetchSuppliersFromGoogleSheet() {
             throw new Error('Invalid data format received from server');
         }
 
+        // Transform data into usable format for localStorage
         const transformedSuppliers = suppliersFromSheet.reduce((acc, sheetSupplier) => {
             if (!sheetSupplier.Name || !sheetSupplier['Service Type']) {
                 console.warn('Skipping invalid supplier entry:', sheetSupplier);
@@ -61,9 +62,11 @@ async function fetchSuppliersFromGoogleSheet() {
 
         console.log('Transformed suppliers:', transformedSuppliers);
 
+        // Save the transformed suppliers to localStorage
         localStorage.setItem('suppliers', JSON.stringify(transformedSuppliers));
         window.suppliers = transformedSuppliers;
 
+        // Update UI
         if (typeof updateSupplierTables === 'function') updateSupplierTables();
         if (typeof updateDailyRateSection === 'function') updateDailyRateSection();
 
@@ -105,6 +108,7 @@ async function syncSuppliersToGoogleSheet() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ suppliers: formattedData }),
+            mode: 'cors', // Make sure CORS is configured on your Apps Script side
         });
 
         const result = await response.json();
