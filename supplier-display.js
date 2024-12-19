@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Initialize the suppliers array from localStorage or as an empty array if not found
+    let suppliers = JSON.parse(localStorage.getItem('suppliers')) || [];
+
     function updateSupplierTables() {
         const tables = {
             'bank-express': document.getElementById('bank-express-table-body'),
@@ -8,10 +11,12 @@ document.addEventListener('DOMContentLoaded', function () {
             'alipay': document.getElementById('alipay-table-body')
         };
 
+        // Clear all the tables
         Object.values(tables).forEach(table => {
             if (table) table.innerHTML = '';
         });
 
+        // Iterate through the suppliers array and populate the tables
         suppliers.forEach((supplier, supplierIndex) => {
             supplier.services.forEach((service, serviceIndex) => {
                 const tabKey = service.serviceType;
