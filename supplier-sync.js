@@ -1,14 +1,22 @@
 // Define your Google Sheets API URL here
-const googleSheetApiUrl = 'https://script.google.com/macros/s/AKfycbyDLoMS-wOZ4PjcfFx50nPcUTOfDF8NZsWDqPTVIXcQLROm8YlBQUUnwdbBOqQLdhww/exec';
+const googleSheetApiUrl = 'https://script.google.com/macros/s/AKfycbwQLQpGsurv6DZnsEi4sH1l_S2FkmD1UP69z4fhJn7wf5qluS40wIIW3Gv0ptQuVgPG/exec';
 
 // POST request to sync suppliers data
-fetch('https://script.google.com/macros/s/AKfycbyDLoMS-wOZ4PjcfFx50nPcUTOfDF8NZsWDqPTVIXcQLROm8YlBQUUnwdbBOqQLdhww/exec', {
+fetch(googleSheetApiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ suppliers: window.suppliers }), // Using window.suppliers directly
     mode: 'cors', // Ensure CORS is configured in the Apps Script
 })
-.then(response => response.json())
+.then(response => {
+    if (!response.ok) {
+        return response.json().then(errorData => {
+            console.error('Error response:', errorData);
+            throw new Error(errorData.message || `POST failed: ${response.status} ${response.statusText}`);
+        });
+    }
+    return response.json();
+})
 .then(data => console.log('Response:', data))
 .catch(error => console.error('Error:', error));
 
@@ -16,7 +24,10 @@ fetch('https://script.google.com/macros/s/AKfycbyDLoMS-wOZ4PjcfFx50nPcUTOfDF8NZs
 async function fetchSuppliersFromGoogleSheet() {
     try {
         console.log('Starting fetch...');
-        const response = await fetch(googleSheetApiUrl);
+        const response = await fetch(googleSheetApiUrl, {
+            method: 'GET',
+            mode: 'cors',
+        });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -37,24 +48,24 @@ async function fetchSuppliersFromGoogleSheet() {
 
         // Transform data into usable format for localStorage
         const transformedSuppliers = suppliersFromSheet.reduce((acc, sheetSupplier) => {
-            if (!sheetSupplier.Name || !sheetSupplier['Service Type']) {
+            if (!sheetSupplier.name || !sheetSupplier.serviceType) {
                 console.warn('Skipping invalid supplier entry:', sheetSupplier);
                 return acc;
             }
 
-            const existingSupplier = acc.find(s => s.name === sheetSupplier.Name);
+            const existingSupplier = acc.find(s => s.name === sheetSupplier.name);
             const service = {
-                serviceType: sheetSupplier['Service Type'],
-                amountLimits: parseJsonSafely(sheetSupplier['Amount Limits']),
-                serviceCharges: parseJsonSafely(sheetSupplier['Service Charges']),
-                additionalQuestions: parseJsonSafely(sheetSupplier['Additional Questions']),
+                serviceType: sheetSupplier.serviceType,
+                amountLimits: parseJsonSafely(sheetSupplier.amountLimits),
+                serviceCharges: parseJsonSafely(sheetSupplier.serviceCharges),
+                additionalQuestions: parseJsonSafely(sheetSupplier.additionalQuestions),
             };
 
             if (existingSupplier) {
                 existingSupplier.services.push(service);
             } else {
                 acc.push({
-                    name: sheetSupplier.Name,
+                    name: sheetSupplier.name,
                     isActive: true,
                     services: [service],
                 });
