@@ -1,4 +1,5 @@
-// Daily Rate Section
+// Declare suppliers as let since it needs to be modifiable
+let suppliers = [];
 
 document.addEventListener('DOMContentLoaded', function () {
     function updateDailyRateSection() {
@@ -10,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         dailyRateSection.innerHTML = '';
 
-        if (suppliers.length === 0) {
+        if (!Array.isArray(suppliers) || suppliers.length === 0) {
             const noSuppliersMessage = document.createElement('p');
             noSuppliersMessage.textContent = 'No suppliers available to display daily rates.';
             noSuppliersMessage.style.color = '#555';
@@ -20,22 +21,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         suppliers.forEach(supplier => {
+            if (!supplier || !supplier.services) return;
+
             const supplierHeader = document.createElement('h4');
-            supplierHeader.textContent = `Supplier: ${supplier.name}`;
+            supplierHeader.textContent = `Supplier: ${supplier.name || 'Unknown'}`;
             dailyRateSection.appendChild(supplierHeader);
 
             supplier.services.forEach(service => {
+                if (!service || !service.serviceType || !Array.isArray(service.amountLimits)) return;
+
                 const serviceHeader = document.createElement('h5');
                 serviceHeader.textContent = `Service: ${service.serviceType.replace(/-/g, ' ')}`;
                 dailyRateSection.appendChild(serviceHeader);
 
                 service.amountLimits.forEach(limit => {
+                    if (!limit) return;
+
                     const rateRow = document.createElement('div');
                     rateRow.classList.add('form-row');
                     rateRow.innerHTML = `
-                        <label>Amount Limit: ${limit.limit} - Rate:</label>
+                        <label>Amount Limit: ${limit.limit || 'N/A'} - Rate:</label>
                         <input 
                             type="number" 
+                            step="0.01"
+                            min="0"
                             placeholder="Enter daily rate" 
                             value="${limit.rate || ''}" 
                             data-supplier="${supplier.name}" 
@@ -51,10 +60,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function saveDailyRates() {
         const rateInputs = document.querySelectorAll('#daily-rate-section input');
-        if (rateInputs.length === 0) {
+        if (!rateInputs || rateInputs.length === 0) {
             console.warn('No daily rates to save.');
             return;
         }
+
+        let hasChanges = false;
 
         rateInputs.forEach(input => {
             const supplierName = input.getAttribute('data-supplier');
@@ -62,37 +73,58 @@ document.addEventListener('DOMContentLoaded', function () {
             const limit = input.getAttribute('data-limit');
             const rate = parseFloat(input.value);
 
-            const supplier = suppliers.find(s => s.name === supplierName);
+            if (!supplierName || !serviceType || !limit) return;
+
+            const supplier = suppliers.find(s => s && s.name === supplierName);
             if (supplier) {
-                const service = supplier.services.find(s => s.serviceType === serviceType);
+                const service = supplier.services.find(s => s && s.serviceType === serviceType);
                 if (service) {
-                    const amountLimit = service.amountLimits.find(a => a.limit === limit);
+                    const amountLimit = service.amountLimits.find(a => a && a.limit === limit);
                     if (amountLimit) {
-                        amountLimit.rate = isNaN(rate) ? null : rate;
+                        const newRate = isNaN(rate) ? null : rate;
+                        if (amountLimit.rate !== newRate) {
+                            amountLimit.rate = newRate;
+                            hasChanges = true;
+                        }
                     }
                 }
             }
         });
 
-        localStorage.setItem('suppliers', JSON.stringify(suppliers));
-        console.log('Daily rates saved successfully.');
+        if (hasChanges) {
+            try {
+                localStorage.setItem('suppliers', JSON.stringify(suppliers));
+                showNotification('Daily rates saved successfully', 'success');
+            } catch (error) {
+                console.error('Error saving daily rates:', error);
+                showNotification('Failed to save daily rates', 'error');
+            }
+        }
     }
 
     // Load suppliers from localStorage if available
-    const storedSuppliers = localStorage.getItem('suppliers');
-    if (storedSuppliers) {
-        suppliers = JSON.parse(storedSuppliers);
+    try {
+        const storedSuppliers = localStorage.getItem('suppliers');
+        if (storedSuppliers) {
+            suppliers = JSON.parse(storedSuppliers);
+        }
+    } catch (error) {
+        console.error('Error loading suppliers from localStorage:', error);
+        suppliers = [];
     }
 
     // Update daily rate section on load
     updateDailyRateSection();
 
     // Add event listener to save rates when necessary
-    document.getElementById('daily-rate-section')?.addEventListener('input', () => {
-        saveDailyRates();
-    });
+    const dailyRateSection = document.getElementById('daily-rate-section');
+    if (dailyRateSection) {
+        dailyRateSection.addEventListener('input', () => {
+            saveDailyRates();
+        });
+    }
 
-    // Ensure daily rate section is updated when suppliers are modified
+    // Listen for supplier updates
     window.addEventListener('suppliersUpdated', function() {
         updateDailyRateSection();
     });
@@ -100,9 +132,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // Function to refresh daily rates (if needed)
     function refreshDailyRates() {
         updateDailyRateSection();
-        console.log('Daily rates refreshed.');
+        showNotification('Daily rates refreshed', 'success');
     }
 
-    // Expose the refresh function globally if needed
+    // Expose necessary functions globally
     window.refreshDailyRates = refreshDailyRates;
+    window.updateDailyRateSection = updateDailyRateSection;
 });
