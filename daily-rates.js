@@ -1,7 +1,8 @@
-// Declare suppliers as let since it needs to be modifiable
-let suppliers = [];
-
 document.addEventListener('DOMContentLoaded', function () {
+    // Use the shared state
+    const suppliers = window.suppliersState;
+    suppliers.load();
+
     function updateDailyRateSection() {
         const dailyRateSection = document.getElementById('daily-rate-section');
         if (!dailyRateSection) {
@@ -11,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         dailyRateSection.innerHTML = '';
 
-        if (!Array.isArray(suppliers) || suppliers.length === 0) {
+        if (!Array.isArray(suppliers.data) || suppliers.data.length === 0) {
             const noSuppliersMessage = document.createElement('p');
             noSuppliersMessage.textContent = 'No suppliers available to display daily rates.';
             noSuppliersMessage.style.color = '#555';
@@ -20,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        suppliers.forEach(supplier => {
+        suppliers.data.forEach(supplier => {
             if (!supplier || !supplier.services) return;
 
             const supplierHeader = document.createElement('h4');
@@ -75,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!supplierName || !serviceType || !limit) return;
 
-            const supplier = suppliers.find(s => s && s.name === supplierName);
+            const supplier = suppliers.data.find(s => s && s.name === supplierName);
             if (supplier) {
                 const service = supplier.services.find(s => s && s.serviceType === serviceType);
                 if (service) {
@@ -93,24 +94,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (hasChanges) {
             try {
-                localStorage.setItem('suppliers', JSON.stringify(suppliers));
+                suppliers.save();
                 showNotification('Daily rates saved successfully', 'success');
             } catch (error) {
                 console.error('Error saving daily rates:', error);
                 showNotification('Failed to save daily rates', 'error');
             }
         }
-    }
-
-    // Load suppliers from localStorage if available
-    try {
-        const storedSuppliers = localStorage.getItem('suppliers');
-        if (storedSuppliers) {
-            suppliers = JSON.parse(storedSuppliers);
-        }
-    } catch (error) {
-        console.error('Error loading suppliers from localStorage:', error);
-        suppliers = [];
     }
 
     // Update daily rate section on load
