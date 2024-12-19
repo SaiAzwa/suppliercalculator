@@ -1,8 +1,8 @@
 // Define your Google Sheets API URL here
-const googleSheetApiUrl = 'https://script.google.com/macros/s/AKfycbxMB0prWMeWlkxPXA48qaN7qDSRxL7JeJM8tj3qMeN1frOuBx0a4FTaHP-kIF2Oj4Y/exec';
+const googleSheetApiUrl = 'https://script.google.com/macros/s/AKfycbyDLoMS-wOZ4PjcfFx50nPcUTOfDF8NZsWDqPTVIXcQLROm8YlBQUUnwdbBOqQLdhww/exec';
 
 // POST request to sync suppliers data
-fetch('https://script.google.com/macros/s/AKfycbxMB0prWMeWlkxPXA48qaN7qDSRxL7JeJM8tj3qMeN1frOuBx0a4FTaHP-kIF2Oj4Y/exec', {
+fetch('https://script.google.com/macros/s/AKfycbyDLoMS-wOZ4PjcfFx50nPcUTOfDF8NZsWDqPTVIXcQLROm8YlBQUUnwdbBOqQLdhww/exec', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ suppliers: window.suppliers }), // Using window.suppliers directly
