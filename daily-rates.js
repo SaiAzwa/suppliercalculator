@@ -1,7 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Use the shared state
+    // Check if suppliers state exists
+    if (!window.suppliersState) {
+        console.error('Suppliers state not initialized');
+        return;
+    }
+
     const suppliers = window.suppliersState;
-    suppliers.load();
 
     function updateDailyRateSection() {
         const dailyRateSection = document.getElementById('daily-rate-section');
