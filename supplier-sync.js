@@ -1,5 +1,5 @@
 // Define your Google Sheets API URL here
-const googleSheetApiUrl = 'https://script.google.com/macros/s/your-script-id/exec';
+const googleSheetApiUrl = 'https://script.google.com/macros/s/AKfycbyqvJlkI4grVloycX6PeD5eRObZhC-5aLETkwi1jzMVKogNTA_VqZkoH8XCCyqU66Sg/exec';
 
 // POST request to sync suppliers data
 fetch('https://script.google.com/macros/s/AKfycbxCxPbo2LbgFpDgTVmqk1aeoV345Ppf7ANvwVafJKi0JMWoMYYJVxcuS3Y0OYsLvf7I/exec', {
