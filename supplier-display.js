@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Initialize the suppliers array from localStorage or as an empty array if not found
-    let suppliers = JSON.parse(localStorage.getItem('suppliers')) || [];
+    // Use the shared state
+    const suppliers = window.suppliersState;
+    suppliers.load();
 
     function updateSupplierTables() {
         // Define table IDs and get references
@@ -32,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Iterate through the suppliers array and populate the tables
-        suppliers.forEach((supplier, supplierIndex) => {
+        suppliers.data.forEach((supplier, supplierIndex) => {
             // Ensure supplier has required properties
             if (!supplier || !supplier.services) {
                 console.warn(`Invalid supplier data at index ${supplierIndex}`);
@@ -92,15 +93,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Rest of your code remains the same...
-    
     function toggleSupplierStatus(index) {
-        if (suppliers[index]) {
-            suppliers[index].isActive = !suppliers[index].isActive;
-            localStorage.setItem('suppliers', JSON.stringify(suppliers));
+        if (suppliers.data[index]) {
+            suppliers.data[index].isActive = !suppliers.data[index].isActive;
+            suppliers.save();
             updateSupplierTables();
             showNotification(
-                `Supplier "${suppliers[index].name}" is now ${suppliers[index].isActive ? 'Active' : 'Inactive'}!`,
+                `Supplier "${suppliers.data[index].name}" is now ${suppliers.data[index].isActive ? 'Active' : 'Inactive'}!`,
                 'success'
             );
         }
@@ -110,8 +109,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const confirmDelete = confirm("Are you sure you want to delete this supplier?");
         if (!confirmDelete) return;
 
-        suppliers.splice(index, 1);
-        localStorage.setItem('suppliers', JSON.stringify(suppliers));
+        suppliers.data.splice(index, 1);
+        suppliers.save();
         updateSupplierTables();
         if (typeof updateDailyRateSection === 'function') {
             updateDailyRateSection();
