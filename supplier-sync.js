@@ -2,14 +2,14 @@
 fetch('https://script.google.com/macros/s/AKfycbyqvJlkI4grVloycX6PeD5eRObZhC-5aLETkwi1jzMVKogNTA_VqZkoH8XCCyqU66Sg/exec', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ suppliers: window.suppliers }), // Use window.suppliers here
-    mode: 'cors', // Make sure CORS is configured properly
+    body: JSON.stringify({ suppliers: window.suppliers }), // Using window.suppliers directly
+    mode: 'cors', // Ensure CORS is configured in the Apps Script
 })
 .then(response => response.json())
 .then(data => console.log('Response:', data))
 .catch(error => console.error('Error:', error));
 
-// Fetch suppliers from Google Sheets and assign to window.suppliers
+// Function to fetch suppliers from Google Sheets and populate window.suppliers
 async function fetchSuppliersFromGoogleSheet() {
     try {
         console.log('Starting fetch...');
