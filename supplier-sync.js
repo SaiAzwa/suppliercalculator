@@ -6,6 +6,7 @@ const supplierSync = {
     // Fetch data from API and update local state
     async fetchAndUpdateState() {
         try {
+            console.log('Fetching data from API...');
             const response = await fetch(API_URL, {
                 method: 'GET',
                 headers: {
@@ -18,6 +19,7 @@ const supplierSync = {
             }
 
             const apiData = await response.json();
+            console.log('Received API data:', apiData);
             
             // Convert API data to application format
             const formattedData = apiData.map(item => ({
@@ -29,18 +31,24 @@ const supplierSync = {
                 isActive: true
             }));
 
+            console.log('Formatted data:', formattedData);
+
             // Update state
             if (window.suppliersState) {
                 window.suppliersState.data = formattedData;
                 window.suppliersState.save();
+                console.log('State updated and saved:', window.suppliersState.data);
                 
                 // Trigger update event
                 window.dispatchEvent(new Event('suppliersUpdated'));
+                console.log('suppliersUpdated event dispatched');
+            } else {
+                console.error('suppliersState not found');
             }
 
             return formattedData;
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error in fetchAndUpdateState:', error);
             showNotification('Failed to fetch suppliers data', 'error');
             return null;
         }
@@ -49,11 +57,13 @@ const supplierSync = {
     // Save current state to API
     async saveStateToAPI() {
         try {
+            console.log('Saving state to API...');
             if (!window.suppliersState) {
                 throw new Error('Suppliers state not initialized');
             }
 
             const suppliers = window.suppliersState.data;
+            console.log('Current state data:', suppliers);
             
             // Format data for API
             const requestBody = {
@@ -66,6 +76,8 @@ const supplierSync = {
                 }))
             };
 
+            console.log('Formatted request body:', requestBody);
+
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
@@ -76,14 +88,16 @@ const supplierSync = {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('API response:', data);
             showNotification('Suppliers data saved successfully', 'success');
             return data;
         } catch (error) {
-            console.error('Error saving data:', error);
+            console.error('Error in saveStateToAPI:', error);
             showNotification('Failed to save suppliers data', 'error');
             return null;
         }
@@ -91,18 +105,23 @@ const supplierSync = {
 
     // Initialize sync
     async init() {
+        console.log('Initializing supplier sync...');
         // Initial load from API
         await this.fetchAndUpdateState();
 
         // Set up auto-sync
         window.addEventListener('suppliersStateChanged', async () => {
+            console.log('suppliersStateChanged event received');
             await this.saveStateToAPI();
         });
+
+        console.log('Sync initialization complete');
     }
 };
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded - Starting supplier sync init');
     await supplierSync.init();
 });
 
