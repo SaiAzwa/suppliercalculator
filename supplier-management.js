@@ -30,21 +30,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 }))
                 .filter(charge => charge.condition && charge.charge);
 
-            // Get additional questions answers
-            const additionalQuestions = [];
-            const questionContainers = document.querySelectorAll('.additional-question-item');
-            questionContainers.forEach(container => {
-                const label = container.querySelector('.question-label').textContent.trim();
-                const select = container.querySelector('.question-answer');
-                if (label && select) {
-                    additionalQuestions.push({
-                        label: label,
-                        value: select.value
-                    });
-                }
-            });
+            console.log('Service charges:', serviceCharges);
 
-            console.log('Additional questions:', additionalQuestions);
+            // Collect additional questions with enhanced logging
+            console.log('Collecting additional questions...');
+            const additionalQuestions = Array.from(document.querySelectorAll('.additional-question-item'))
+                .map(container => {
+                    const label = container.querySelector('.question-label');
+                    const select = container.querySelector('.question-answer');
+                    console.log('Processing question element:', { 
+                        labelElement: label, 
+                        selectElement: select,
+                        labelText: label?.textContent,
+                        selectValue: select?.value
+                    });
+                    
+                    if (label && select) {
+                        const question = {
+                            label: label.textContent.trim(),
+                            value: select.value
+                        };
+                        console.log('Created question object:', question);
+                        return question;
+                    }
+                    console.log('Skipping invalid question element');
+                    return null;
+                })
+                .filter(q => q !== null);
+
+            console.log('Collected additional questions:', additionalQuestions);
 
             if (!name || !serviceType || amountLimits.length === 0) {
                 alert('Please fill out all required fields.');
@@ -62,7 +76,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }]
             };
 
-            console.log('Prepared supplier data:', supplierData);
+            console.log('Created supplier data:', JSON.stringify(supplierData, null, 2));
+
+            // Verify additional questions data
+            if (supplierData.services[0].additionalQuestions.length > 0) {
+                console.log('Additional questions verified:', supplierData.services[0].additionalQuestions);
+            } else {
+                console.warn('No additional questions found in supplier data');
+            }
 
             if (editingSupplierIndex === -1) {
                 // Adding new supplier
@@ -83,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Save to state and trigger sync
             suppliers.save();
+            logStateAfterSave();
             console.log('State saved');
             
             // Trigger sync event
@@ -247,6 +269,14 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('additional-questions-container').innerHTML = '';
         document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
         editingSupplierIndex = -1;
+    }
+
+    // Helper function to log state after save
+    function logStateAfterSave() {
+        console.log('Current state after save:', {
+            fullState: window.suppliersState.data,
+            lastSupplier: window.suppliersState.data[window.suppliersState.data.length - 1]
+        });
     }
 
     // Make removeItem function available globally
