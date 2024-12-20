@@ -1,50 +1,42 @@
-// Create a self-executing function to avoid global scope pollution
-(function() {
-    console.log('Initializing suppliers state...');
+alert('suppliers-state.js is loading');
+
+console.log('Starting suppliers-state.js initialization...');
+
+// Initialize suppliers state
+window.suppliersState = {
+    data: [],
     
-    // Initialize the suppliers state
-    window.suppliersState = {
-        data: [],
-        load() {
-            try {
-                const stored = localStorage.getItem('suppliers');
-                console.log('Loading from localStorage:', stored);
-                this.data = stored ? JSON.parse(stored) : [];
-                console.log('State loaded:', this.data);
-                return true;
-            } catch (error) {
-                console.error('Error loading suppliers:', error);
-                this.data = [];
-                return false;
+    load() {
+        try {
+            console.log('Attempting to load from localStorage...');
+            const stored = localStorage.getItem('suppliers');
+            console.log('LoadedFromStorage:', stored);
+            if (stored) {
+                this.data = JSON.parse(stored);
             }
-        },
-        save() {
-            try {
-                localStorage.setItem('suppliers', JSON.stringify(this.data));
-                console.log('State saved:', this.data);
-                return true;
-            } catch (error) {
-                console.error('Error saving suppliers:', error);
-                return false;
-            }
+            console.log('Current state data:', this.data);
+        } catch (error) {
+            console.error('Error loading suppliers:', error);
+            this.data = [];
         }
-    };
+    },
 
-    // Load the initial data
-    const loadSuccess = window.suppliersState.load();
-    console.log('Initial state load ' + (loadSuccess ? 'successful' : 'failed'));
-    console.log('Suppliers state initialized:', window.suppliersState);
+    save() {
+        try {
+            console.log('Attempting to save to localStorage...');
+            localStorage.setItem('suppliers', JSON.stringify(this.data));
+            console.log('Saved data:', this.data);
+        } catch (error) {
+            console.error('Error saving suppliers:', error);
+        }
+    }
+};
 
-    // Add a method to verify state
-    window.suppliersState.verify = function() {
-        console.log('State verification:', {
-            stateExists: !!window.suppliersState,
-            hasData: Array.isArray(this.data),
-            dataLength: this.data.length,
-            currentData: this.data
-        });
-    };
+// Load initial data
+window.suppliersState.load();
 
-    // Verify state after initialization
-    window.suppliersState.verify();
-})();
+console.log('Suppliers state initialization complete:', {
+    stateExists: !!window.suppliersState,
+    dataArray: Array.isArray(window.suppliersState.data),
+    dataLength: window.suppliersState.data.length
+});
