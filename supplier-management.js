@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const name = document.getElementById('supplier-name').value.trim();
             const serviceType = document.getElementById('service-type').value;
-            const isActive = document.getElementById('supplier-status')?.checked;
+            const isActive = document.getElementById('supplier-status')?.checked ?? true;
             
             console.log('Form values:', { name, serviceType, isActive });
 
@@ -30,15 +30,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 }))
                 .filter(charge => charge.condition && charge.charge);
 
+            // Get additional questions answers
             const additionalQuestions = [];
             const questionContainers = document.querySelectorAll('.additional-question-item');
             questionContainers.forEach(container => {
-                const label = container.querySelector('.question-label')?.textContent.trim();
-                const value = container.querySelector('.question-answer')?.value.trim();
-                if (label && value) {
-                    additionalQuestions.push({ label, value });
+                const label = container.querySelector('.question-label').textContent.trim();
+                const select = container.querySelector('.question-answer');
+                if (label && select) {
+                    additionalQuestions.push({
+                        label: label,
+                        value: select.value
+                    });
                 }
             });
+
+            console.log('Additional questions:', additionalQuestions);
 
             if (!name || !serviceType || amountLimits.length === 0) {
                 alert('Please fill out all required fields.');
@@ -166,8 +172,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleAdditionalQuestions(serviceType) {
+        console.log('Handling additional questions for service type:', serviceType);
         const questionsContainer = document.getElementById('additional-questions-container');
-        if (!questionsContainer) return;
+        if (!questionsContainer) {
+            console.error('Additional questions container not found');
+            return;
+        }
 
         questionsContainer.innerHTML = '';
 
@@ -182,6 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
             ],
+            'enterprise': [], // Add if you have specific questions
             'usd-transfer': [
                 { label: 'Account Type', type: 'select', options: ['Personal', 'Company'] }
             ],
@@ -192,22 +203,37 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         const questions = additionalQuestionsMap[serviceType] || [];
+        console.log('Questions for service type:', questions);
+
         questions.forEach(question => {
             const questionDiv = document.createElement('div');
             questionDiv.classList.add('additional-question-item', 'form-group');
-            questionDiv.innerHTML = `
-                <label class="question-label">${question.label}</label>
-                ${
-                    question.type === 'select'
-                        ? `<select class="question-answer">
-                            ${question.options.map(option => 
-                                `<option value="${option.toLowerCase()}">${option}</option>`
-                            ).join('')}
-                           </select>`
-                        : `<input type="${question.type}" class="question-answer" 
-                             placeholder="${question.placeholder || ''}" />`
-                }
-            `;
+            
+            // Create the label element
+            const label = document.createElement('label');
+            label.className = 'question-label';
+            label.textContent = question.label;
+            questionDiv.appendChild(label);
+
+            // Create the input/select element
+            if (question.type === 'select') {
+                const select = document.createElement('select');
+                select.className = 'question-answer';
+                question.options.forEach(optionText => {
+                    const option = document.createElement('option');
+                    option.value = optionText.toLowerCase();
+                    option.textContent = optionText;
+                    select.appendChild(option);
+                });
+                questionDiv.appendChild(select);
+            } else {
+                const input = document.createElement('input');
+                input.type = question.type;
+                input.className = 'question-answer';
+                input.placeholder = question.placeholder || '';
+                questionDiv.appendChild(input);
+            }
+
             questionsContainer.appendChild(questionDiv);
         });
     }
@@ -258,13 +284,21 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('service-charge-section')?.appendChild(serviceChargeItem);
     });
 
-    document.getElementById('service-type')?.addEventListener('change', function() {
-        handleAdditionalQuestions(this.value);
+    // Update service type change handler
+    document.getElementById('service-type')?.addEventListener('change', function(event) {
+        console.log('Service type changed to:', event.target.value);
+        handleAdditionalQuestions(event.target.value);
     });
 
     // Make functions available globally
     window.editSupplier = editSupplier;
     window.handleAdditionalQuestions = handleAdditionalQuestions;
+
+    // Initialize additional questions if service type is pre-selected
+    const initialServiceType = document.getElementById('service-type')?.value;
+    if (initialServiceType) {
+        handleAdditionalQuestions(initialServiceType);
+    }
 });
 
 // Global notification function
