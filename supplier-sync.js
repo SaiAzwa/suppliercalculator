@@ -68,19 +68,21 @@ const supplierSync = {
             }
 
             // Format data for SheetDB
-            const data = window.suppliersState.data.map(supplier => {
+            const formattedData = window.suppliersState.data.map(supplier => {
                 const service = supplier.services[0] || {};
-                // Ensure all fields are strings for Google Sheets
                 return {
-                    supplier_name: String(supplier.name || ''),
-                    service_type: String(service.serviceType || ''),
-                    amount_limits: JSON.stringify(service.amountLimits || []),
-                    service_charges: JSON.stringify(service.serviceCharges || []),
-                    additional_questions: JSON.stringify(service.additionalQuestions || [])
+                    supplier_name: supplier.name || '',
+                    service_type: service.serviceType || '',
+                    amount_limits: Array.isArray(service.amountLimits) ? 
+                        JSON.stringify(service.amountLimits) : '[]',
+                    service_charges: Array.isArray(service.serviceCharges) ? 
+                        JSON.stringify(service.serviceCharges) : '[]',
+                    additional_questions: Array.isArray(service.additionalQuestions) ? 
+                        JSON.stringify(service.additionalQuestions) : '[]'
                 };
             });
 
-            console.log('Sending data to SheetDB:', { data });
+            console.log('Sending formatted data to SheetDB:', formattedData);
 
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -88,21 +90,49 @@ const supplierSync = {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ data })
+                body: JSON.stringify({
+                    data: formattedData
+                })
             });
 
-            const responseText = await response.text();
-            console.log('SheetDB Response:', responseText);
-
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}, response: ${responseText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
             }
 
-            showNotification('Suppliers synced to Google Sheets successfully', 'success');
+            const result = await response.json();
+            console.log('SheetDB save response:', result);
+            showNotification('Suppliers data saved successfully', 'success');
             return true;
         } catch (error) {
             console.error('Error saving to API:', error);
-            showNotification('Failed to sync suppliers to Google Sheets', 'error');
+            showNotification('Failed to save suppliers data', 'error');
+            return false;
+        }
+    },
+
+    // Delete a supplier from API
+    async deleteSupplier(supplierName) {
+        try {
+            console.log('Deleting supplier:', supplierName);
+            const response = await fetch(`${API_URL}/supplier_name/${supplierName}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Delete response:', data);
+            showNotification('Supplier deleted successfully', 'success');
+            return true;
+        } catch (error) {
+            console.error('Error deleting supplier:', error);
+            showNotification('Failed to delete supplier', 'error');
             return false;
         }
     },
@@ -144,3 +174,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for use in other files
 window.supplierSync = supplierSync;
+
+// Helper notification function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    
+    Object.assign(notification.style, {
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
+        color: 'white',
+        padding: '15px',
+        borderRadius: '8px',
+        boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
+        fontSize: '16px',
+        zIndex: '1000'
+    });
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
