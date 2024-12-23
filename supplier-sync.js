@@ -31,7 +31,7 @@ const supplierSync = {
                 try {
                     return {
                         name: item.supplier_name,
-                        isActive: true,
+                        isActive: item.supplier_status === 'active',
                         services: [{
                             serviceType: item.service_type,
                             amountLimits: JSON.parse(item.amount_limits || '[]'),
@@ -45,11 +45,16 @@ const supplierSync = {
                 }
             }).filter(Boolean);
 
+            console.log('Formatted data:', formattedData);
+
             if (window.suppliersState) {
                 window.suppliersState.data = formattedData;
                 window.suppliersState.save();
                 window.dispatchEvent(new Event('suppliersUpdated'));
                 showNotification('Suppliers data loaded successfully', 'success');
+            } else {
+                console.error('suppliersState not found');
+                showNotification('Error: Unable to update state', 'error');
             }
 
             return formattedData;
@@ -72,6 +77,7 @@ const supplierSync = {
                 const service = supplier.services[0] || {};
                 return {
                     supplier_name: supplier.name || '',
+                    supplier_status: supplier.isActive ? 'active' : 'inactive',
                     service_type: service.serviceType || '',
                     amount_limits: Array.isArray(service.amountLimits) ? 
                         JSON.stringify(service.amountLimits) : '[]',
@@ -137,6 +143,37 @@ const supplierSync = {
         }
     },
 
+    // Update a specific supplier's status
+    async updateSupplierStatus(supplierName, isActive) {
+        try {
+            const response = await fetch(`${API_URL}/supplier_name/${supplierName}`, {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    data: {
+                        supplier_status: isActive ? 'active' : 'inactive'
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Status update response:', result);
+            showNotification('Supplier status updated successfully', 'success');
+            return true;
+        } catch (error) {
+            console.error('Error updating supplier status:', error);
+            showNotification('Failed to update supplier status', 'error');
+            return false;
+        }
+    },
+
     // Initialize sync functionality
     init() {
         console.log('Initializing supplier sync...');
@@ -164,6 +201,8 @@ const supplierSync = {
             console.log('Suppliers state changed - manual sync required');
             showNotification('Changes detected - Click "Sync" to save to Google Sheets', 'info');
         });
+
+        console.log('Supplier sync initialized');
     }
 };
 
