@@ -6,132 +6,152 @@
     <title>Supplier Determination and Management System</title>
 <style>
 :root {
-  --primary-color: #007BFF;
-  --secondary-color: #10b981;
-  --bg-color: #f3f4f6;
-  --text-color: #333;
-  --border-color: #ccc;
+    --primary-color: #007BFF;
+    --secondary-color: #10b981;
+    --bg-color: #f3f4f6;
+    --text-color: #333;
+    --border-color: #ccc;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-color);
-  margin: 0;
-  padding: 20px;
-  color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 20px;
+    color: var(--text-color);
 }
 
 .container, .calculator-container {
-  max-width: 1200px;
-  margin: 20px auto;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  padding: 25px;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 25px;
 }
 
 .form-group, .form-row {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #555;
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
 }
 
-input, select {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background-color: #f9f9fb;
-  transition: border-color 0.3s;
-  box-sizing: border-box;
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: #f9f9fb;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.status-wrapper {
+    display: flex;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.status-wrapper span {
+    color: #555;
+    font-size: 14px;
 }
 
 input:focus, select:focus {
-  border-color: var(--primary-color);
-  outline: none;
+    border-color: var(--primary-color);
+    outline: none;
 }
 
 .btn {
-  display: inline-block;
-  padding: 12px 24px;
-  background-color: var(--primary-color);
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.3s;
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s;
+    margin: 5px;
 }
 
 .btn:hover {
-  background-color: #0056b3;
+    background-color: #0056b3;
 }
 
 .order-table, table {
-  width: 100%;
-  margin-top: 25px;
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 10px;
-  overflow: hidden;
+    width: 100%;
+    margin-top: 25px;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .order-table th, .order-table td, th, td {
-  border-bottom: 1px solid #e0e0e0;
-  padding: 12px 15px;
-  text-align: center;
-  color: var(--text-color);
+    border-bottom: 1px solid #e0e0e0;
+    padding: 12px 15px;
+    text-align: center;
+    color: var(--text-color);
 }
 
 .order-table th {
-  background-color: #f1f5f9;
-  font-weight: 600;
-  color: #444;
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: #444;
 }
 
 .toggle-btn {
-  display: block;
-  margin: 15px auto;
-  background-color: var(--secondary-color);
-  padding: 10px 24px;
-  font-weight: 600;
+    display: block;
+    margin: 15px auto;
+    background-color: var(--secondary-color);
+    padding: 10px 24px;
+    font-weight: 600;
 }
 
 .toggle-btn:hover {
-  background-color: #059669;
+    background-color: #059669;
 }
 
 .hidden {
-  display: none;
+    display: none;
 }
 
 .tab {
-  display: inline-block;
-  padding: 12px 20px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  font-weight: 500;
-  color: #555;
-  transition: color 0.3s, border-color 0.3s;
+    display: inline-block;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-weight: 500;
+    color: #555;
+    transition: color 0.3s, border-color 0.3s;
 }
 
 .tab.active {
-  border-bottom: 2px solid var(--primary-color);
-  color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
 }
 
 .tab-content {
-  display: none;
-  margin-top: 20px;
+    display: none;
+    margin-top: 20px;
 }
 
 .tab-content.active {
-  display: block;
+    display: block;
 }
 </style>
 </head>
@@ -186,6 +206,15 @@ input:focus, select:focus {
         <label for="supplier-name">Supplier Name</label>
         <input type="text" id="supplier-name" placeholder="Enter supplier name">
     </div>
+    
+    <div class="form-row">
+        <label for="supplier-status">Status</label>
+        <div class="status-wrapper">
+            <input type="checkbox" id="supplier-status" name="supplier-status" checked>
+            <span>Active</span>
+        </div>
+    </div>
+
     <div class="form-row">
         <label for="service-type">Service Type</label>
         <select id="service-type">
@@ -216,6 +245,7 @@ input:focus, select:focus {
     <h3>Supplier Information</h3>
     <button id="sync-suppliers-btn" class="btn">Sync Suppliers to Google Sheet</button>
     <button id="fetch-suppliers-btn" class="btn">Fetch Suppliers from Google Sheets</button>
+    
     <div class="tabs" id="service-tabs">
         <div class="tab" data-service="bank-express">Bank Transfer (Express)</div>
         <div class="tab" data-service="bank-saver">Bank Transfer (Saver)</div>
@@ -248,6 +278,7 @@ input:focus, select:focus {
                         <th>Amount Limits</th>
                         <th>Service Charges</th>
                         <th>Additional Questions</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -262,6 +293,7 @@ input:focus, select:focus {
                         <th>Amount Limits</th>
                         <th>Service Charges</th>
                         <th>Additional Questions</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -276,6 +308,7 @@ input:focus, select:focus {
                         <th>Amount Limits</th>
                         <th>Service Charges</th>
                         <th>Additional Questions</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -290,6 +323,7 @@ input:focus, select:focus {
                         <th>Amount Limits</th>
                         <th>Service Charges</th>
                         <th>Additional Questions</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -298,6 +332,7 @@ input:focus, select:focus {
         </div>
     </div>
 </div>
+
 <script src="suppliers-state.js"></script>
 <script src="ui-controls.js"></script>
 <script src="supplier-sync.js"></script>
@@ -306,25 +341,5 @@ input:focus, select:focus {
 <script src="daily-rates.js"></script>
 <script src="calculator.js"></script>
 
-<script>
-        // Initialize suppliers array if it doesn't exist
-        if (typeof suppliers === 'undefined') {
-            window.suppliers = [];
-        }
-
-        // Load suppliers from localStorage on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            const storedSuppliers = localStorage.getItem('suppliers');
-            if (storedSuppliers) {
-                window.suppliers = JSON.parse(storedSuppliers);
-                if (typeof updateSupplierTables === 'function') {
-                    updateSupplierTables();
-                }
-                if (typeof updateDailyRateSection === 'function') {
-                    updateDailyRateSection();
-                }
-            }
-        });
-    </script>
 </body>
 </html>
