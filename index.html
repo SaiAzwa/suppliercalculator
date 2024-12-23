@@ -62,40 +62,38 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
-.status-wrapper {
-    display: flex;
-    align-items: center;
-    margin-top: 5px;
-}
-
-.status-wrapper span {
-    color: #555;
-    font-size: 14px;
-}
-
-input:focus, select:focus {
-    border-color: var(--primary-color);
-    outline: none;
-}
-
-.btn {
-    display: inline-block;
-    padding: 12px 24px;
-    background-color: var(--primary-color);
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
+/* Drag and Drop styles */
+.drop-zone {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    transition: border 0.3s ease, background-color 0.3s ease;
+    background-color: #f9f9fb;
     cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s;
-    margin: 5px;
 }
 
-.btn:hover {
-    background-color: #0056b3;
+.drop-zone.dragover {
+    border-color: var(--primary-color);
+    background-color: #f0f7ff;
 }
 
-/* Add loading indicator styles */
+.drop-zone-text {
+    color: #666;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.file-input-wrapper {
+    display: inline-block;
+}
+
+.file-input-wrapper input[type="file"] {
+    margin-bottom: 10px;
+}
+
+/* Loading indicator styles */
 #loading-indicator {
     position: fixed;
     top: 0;
@@ -119,17 +117,47 @@ input:focus, select:focus {
     animation: spin 1s linear infinite;
 }
 
-.loading-text {
-    color: white;
-    margin-top: 20px;
-    font-size: 18px;
-}
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
+.loading-text {
+    color: white;
+    margin-top: 20px;
+    font-size: 18px;
+}
+/* Button and Interactive Element Styles */
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s;
+    margin: 5px;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.toggle-btn {
+    display: block;
+    margin: 15px auto;
+    background-color: var(--secondary-color);
+    padding: 10px 24px;
+    font-weight: 600;
+}
+
+.toggle-btn:hover {
+    background-color: #059669;
+}
+
+/* Table Styles */
 .order-table, table {
     width: 100%;
     margin-top: 25px;
@@ -152,22 +180,7 @@ input:focus, select:focus {
     color: #444;
 }
 
-.toggle-btn {
-    display: block;
-    margin: 15px auto;
-    background-color: var(--secondary-color);
-    padding: 10px 24px;
-    font-weight: 600;
-}
-
-.toggle-btn:hover {
-    background-color: #059669;
-}
-
-.hidden {
-    display: none;
-}
-
+/* Tab Styles */
 .tab {
     display: inline-block;
     padding: 12px 20px;
@@ -192,38 +205,39 @@ input:focus, select:focus {
     display: block;
 }
 
-/* File input specific styles */
-.form-group input[type="file"] {
-    margin-bottom: 10px;
-    padding: 8px;
+.hidden {
+    display: none;
 }
 
-#process-image-btn {
-    margin-left: 10px;
-}
-#service-filter {
-    margin-bottom: 10px;
-    padding: 8px;
-    width: 200px;
+/* Status Wrapper Styles */
+.status-wrapper {
+    display: flex;
+    align-items: center;
+    margin-top: 5px;
 }
 
-#clear-orders-btn {
-    margin-bottom: 15px;
+.status-wrapper span {
+    color: #555;
+    font-size: 14px;
 }
 </style>
 </head>
 <body>
-
 <div class="calculator-container">
     <h2>Supplier Determination Calculator</h2>
     
-    <!-- Add image upload section -->
+    <!-- Image Upload Section with Drag and Drop -->
     <div class="form-group">
-        <label for="order-image">Upload Orders Image</label>
-        <input type="file" id="order-image" accept="image/*" class="form-control">
-        <button class="btn" id="process-image-btn">Process Orders Image</button>
+        <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-text">Drag and drop image here or</div>
+            <div class="file-input-wrapper">
+                <input type="file" id="order-image" accept="image/*" class="form-control">
+                <button class="btn" id="process-image-btn">Process Orders Image</button>
+            </div>
+        </div>
     </div>
 
+    <!-- Service Type Selection -->
     <div class="form-group">
         <label for="serviceType">Select Service Type:</label>
         <select id="serviceType">
@@ -235,14 +249,14 @@ input:focus, select:focus {
             <option value="alipay">Alipay</option>
         </select>
     </div>
-    <div class="form-group">
-        <label for="orderAmount">Enter Order Amount (must be > 0.01):</label>
-        <input type="number" id="orderAmount" min="0.01" step="0.01" placeholder="Enter amount">
-    </div>
+
     <div id="additionalQuestions"></div>
+    
+    <!-- Action Buttons -->
     <button class="btn" id="createOrderBtn">Create Order</button>
     <button class="btn" id="calculateBestSupplierBtn">Calculate the Best Supplier</button>
 
+    <!-- Orders Table -->
     <table class="order-table" id="orderTable">
         <thead>
             <tr>
@@ -289,6 +303,7 @@ input:focus, select:focus {
             <option value="alipay">Alipay Transfer</option>
         </select>
     </div>
+
     <div class="form-row">
         <label>Amount Limits</label>
         <div id="amount-limits-section"></div>
@@ -318,7 +333,9 @@ input:focus, select:focus {
         <div class="tab" data-service="alipay">Alipay Transfer</div>
     </div>
 
+    <!-- Tab Content Container -->
     <div id="tab-content-container">
+        <!-- Bank Express Tab -->
         <div class="tab-content" id="bank-express-tab">
             <table>
                 <thead>
@@ -334,6 +351,8 @@ input:focus, select:focus {
                 <tbody id="bank-express-table-body"></tbody>
             </table>
         </div>
+
+        <!-- Bank Saver Tab -->
         <div class="tab-content" id="bank-saver-tab">
             <table>
                 <thead>
@@ -349,6 +368,8 @@ input:focus, select:focus {
                 <tbody id="bank-saver-table-body"></tbody>
             </table>
         </div>
+
+        <!-- Enterprise Tab -->
         <div class="tab-content" id="enterprise-tab">
             <table>
                 <thead>
@@ -364,6 +385,8 @@ input:focus, select:focus {
                 <tbody id="enterprise-table-body"></tbody>
             </table>
         </div>
+
+        <!-- USD Transfer Tab -->
         <div class="tab-content" id="usd-transfer-tab">
             <table>
                 <thead>
@@ -379,6 +402,8 @@ input:focus, select:focus {
                 <tbody id="usd-transfer-table-body"></tbody>
             </table>
         </div>
+
+        <!-- Alipay Tab -->
         <div class="tab-content" id="alipay-tab">
             <table>
                 <thead>
@@ -396,7 +421,7 @@ input:focus, select:focus {
         </div>
     </div>
 </div>
-<!-- Add loading indicator -->
+<!-- Loading Indicator -->
 <div id="loading-indicator">
     <div class="loading-spinner"></div>
     <div class="loading-text">Processing image... This may take a few minutes.</div>
