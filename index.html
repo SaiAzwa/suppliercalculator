@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supplier Determination and Management System</title>
+    <!-- Add Tesseract.js CDN -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
 <style>
 :root {
     --primary-color: #007BFF;
@@ -43,6 +45,7 @@ label {
 
 input[type="text"],
 input[type="number"],
+input[type="file"],
 select {
     width: 100%;
     padding: 10px;
@@ -90,6 +93,41 @@ input:focus, select:focus {
 
 .btn:hover {
     background-color: #0056b3;
+}
+
+/* Add loading indicator styles */
+#loading-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: white;
+    margin-top: 20px;
+    font-size: 18px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .order-table, table {
@@ -153,12 +191,30 @@ input:focus, select:focus {
 .tab-content.active {
     display: block;
 }
+
+/* File input specific styles */
+.form-group input[type="file"] {
+    margin-bottom: 10px;
+    padding: 8px;
+}
+
+#process-image-btn {
+    margin-left: 10px;
+}
 </style>
 </head>
 <body>
 
 <div class="calculator-container">
     <h2>Supplier Determination Calculator</h2>
+    
+    <!-- Add image upload section -->
+    <div class="form-group">
+        <label for="order-image">Upload Orders Image</label>
+        <input type="file" id="order-image" accept="image/*" class="form-control">
+        <button class="btn" id="process-image-btn">Process Orders Image</button>
+    </div>
+
     <div class="form-group">
         <label for="serviceType">Select Service Type:</label>
         <select id="serviceType">
@@ -192,7 +248,6 @@ input:focus, select:focus {
         </tbody>
     </table>
 </div>
-
 <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
 
 <div class="container hidden" id="supplierManagementSection">
@@ -332,7 +387,13 @@ input:focus, select:focus {
         </div>
     </div>
 </div>
+<!-- Add loading indicator -->
+<div id="loading-indicator">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Processing image... This may take a few minutes.</div>
+</div>
 
+<!-- Scripts -->
 <script src="suppliers-state.js"></script>
 <script src="ui-controls.js"></script>
 <script src="supplier-sync.js"></script>
@@ -340,6 +401,7 @@ input:focus, select:focus {
 <script src="supplier-display.js"></script>
 <script src="daily-rates.js"></script>
 <script src="calculator.js"></script>
+<script src="order-image-import.js"></script>
 
 </body>
 </html>
