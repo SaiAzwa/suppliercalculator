@@ -1,5 +1,7 @@
+// Your current order-image-import.js code
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Tesseract worker
+    let processedOrders = []; // Store orders for filtering
+
     async function initializeWorker() {
         const worker = await Tesseract.createWorker({
             logger: m => {
@@ -12,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return worker;
     }
 
-    // Process image function
     async function processOrderImage(file) {
         try {
             showLoadingIndicator('Initializing OCR...');
@@ -20,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             showLoadingIndicator('Processing image...');
             const result = await worker.recognize(file);
-            console.log('OCR Result:', result);
+            console.log('OCR Raw Result:', result.data.text);
 
             // Parse the text
             const orders = parseOrderText(result.data.text);
@@ -45,7 +46,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function parseOrderText(text) {
-        // Split text into lines and filter out empty lines
         const lines = text.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
@@ -54,14 +54,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return lines.map(line => {
             try {
-                // Split line into parts
-                const parts = line.split(/\s+/);
-                if (parts.length < 9) return null; // Skip invalid lines
-
-                // Extract the service type from the remaining parts
-                const serviceType = extractServiceType(parts);
+                // Split by multiple spaces and combine excess parts
+                const parts = line.match(/\S+/g) || [];
+                console.log('Line parts:', parts);
                 
-                // Create order object
+                if (parts.length < 10) {
+                    console.log('Skipping line - insufficient parts:', line);
+                    return null;
+                }
+
+                // Extract information based on known positions
                 const order = {
                     date: parts[0],
                     referenceNumber: parts[1],
@@ -69,13 +71,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     paymentAmount: extractAmount(parts[3], 'MYR'),
                     markingNumber: parts[4],
                     orderAmount: extractAmount(parts[5], 'CNY'),
-                    serviceType: serviceType,
-                    timeSinceOrder: extractTime(parts.slice(-3)[0]),
-                    accountType: parts.slice(-2)[0],
-                    customerName: parts.slice(-1)[0]
+                    serviceType: extractServiceType(parts.slice(6)),
+                    timeSinceOrder: parts[parts.length - 3],
+                    accountType: parts[parts.length - 2],
+                    customerName: parts[parts.length - 1]
                 };
 
+                console.log('Parsed order:', order);
                 return isValidOrder(order) ? order : null;
+
             } catch (error) {
                 console.error('Error parsing line:', line, error);
                 return null;
@@ -84,61 +88,151 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function extractServiceType(parts) {
-        // Find service type in the parts array
-        const serviceTypes = [
-            'BANK TRANSFER (SAVER)',
-            'BANK TRANSFER (EXPRESS)',
-            'ALIPAY TRANSFER',
-            'ENTERPRISE TO ENTERPRISE'
-        ];
+        const serviceTypeMap = {
+            'BANK TRANSFER (SAVER)': 'Bank Transfer (Saver)',
+            'BANK TRANSFER (EXPRESS)': 'Bank Transfer (Express)',
+            'ALIPAY TRANSFER': 'Alipay Transfer',
+            'ENTERPRISE TO ENTERPRISE': 'Enterprise to Enterprise'
+        };
 
-        // Join remaining parts and look for service type
-        const text = parts.join(' ');
-        return serviceTypes.find(type => text.includes(type)) || 'Unknown';
+        const fullText = parts.join(' ');
+        for (const [key, value] of Object.entries(serviceTypeMap)) {
+            if (fullText.includes(key)) return value;
+        }
+        return 'Unknown';
     }
 
     function extractAmount(amountStr, currency) {
         try {
-            return parseFloat(amountStr.replace(currency, '').replace(',', ''));
+            const cleanAmount = amountStr.replace(currency, '').replace(',', '');
+            return parseFloat(cleanAmount) || 0;
         } catch {
             return 0;
         }
     }
 
-    function extractTime(timeStr) {
-        return timeStr || 'Unknown';
-    }
-
     function isValidOrder(order) {
-        return (
+        const isValid = (
             order &&
             order.orderAmount > 0 &&
             order.serviceType !== 'Unknown' &&
             !order.serviceType.includes('1688')
         );
+
+        console.log('Order validation:', { order, isValid });
+        return isValid;
     }
 
-    function addOrdersToTable(orders) {
-        const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
-        if (!orderTable) {
-            console.error('Order table not found');
-            return;
+    // Add filter controls to the page
+    function addFilterControls() {
+        const filterContainer = document.createElement('div');
+        filterContainer.className = 'form-group';
+        filterContainer.innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <label for="service-filter">Filter by Service Type:</label>
+                <select id="service-filter" class="form-control">
+                    <option value="">All Services</option>
+                    <option value="Bank Transfer (Saver)">Bank Transfer (Saver)</option>
+                    <option value="Bank Transfer (Express)">Bank Transfer (Express)</option>
+                    <option value="Alipay Transfer">Alipay Transfer</option>
+                    <option value="Enterprise to Enterprise">Enterprise to Enterprise</option>
+                </select>
+            </div>
+            <button class="btn" id="clear-orders-btn">Clear All Orders</button>
+        `;
+
+        const orderTable = document.getElementById('orderTable');
+        if (orderTable) {
+            orderTable.parentNode.insertBefore(filterContainer, orderTable);
         }
 
+        // Add event listeners
+        document.getElementById('service-filter')?.addEventListener('change', filterOrders);
+        document.getElementById('clear-orders-btn')?.addEventListener('click', clearOrders);
+    }
+
+    function filterOrders() {
+        const serviceType = document.getElementById('service-filter')?.value;
+        const filteredOrders = serviceType ? 
+            processedOrders.filter(order => order.serviceType === serviceType) : 
+            processedOrders;
+        
+        updateOrderTable(filteredOrders);
+    }
+
+    function clearOrders() {
+        processedOrders = [];
+        updateOrderTable([]);
+        showNotification('All orders cleared', 'info');
+    }
+
+    function updateOrderTable(orders) {
+        const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
+        if (!orderTable) return;
+
+        orderTable.innerHTML = '';
         orders.forEach(order => {
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
                 <td>${order.serviceType}</td>
                 <td>${order.orderAmount.toFixed(2)} CNY</td>
                 <td>
-                    Account: ${order.accountType}<br>
-                    Customer: ${order.customerName}<br>
-                    Ref: ${order.referenceNumber}
+                    Ref: ${order.referenceNumber}<br>
+                    Mark: ${order.markingNumber}<br>
+                    Customer: ${order.customerName}
                 </td>
                 <td class="best-supplier">Calculating...</td>
             `;
             orderTable.appendChild(newRow);
         });
+    }
+
+    // Setup drag and drop functionality
+    function setupDragAndDrop() {
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('order-image');
+
+        if (!dropZone || !fileInput) return;
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults);
+            document.body.addEventListener(eventName, preventDefaults);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight);
+        });
+
+        dropZone.addEventListener('drop', handleDrop);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight(e) {
+            dropZone.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('dragover');
+        }
+
+        async function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+
+            if (file && file.type.startsWith('image/')) {
+                fileInput.files = dt.files;
+                await processFile(file);
+            } else {
+                showNotification('Please drop an image file', 'error');
+            }
+        }
     }
 
     // UI Helper functions
@@ -168,6 +262,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    async function processFile(file) {
+        showNotification('Processing image...', 'info');
+        const orders = await processOrderImage(file);
+
+        if (orders.length > 0) {
+            processedOrders = [...processedOrders, ...orders];
+            updateOrderTable(processedOrders);
+            showNotification(`Successfully processed ${orders.length} orders`, 'success');
+            document.getElementById('order-image').value = '';
+        } else {
+            showNotification('No valid orders found in image', 'error');
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        
+        Object.assign(notification.style, {
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
+            color: 'white',
+            padding: '15px',
+            borderRadius: '8px',
+            boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
+            fontSize: '16px',
+            zIndex: '1000'
+        });
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
     // Event Listeners
     const processImageBtn = document.getElementById('process-image-btn');
     if (processImageBtn) {
@@ -180,42 +313,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            showNotification('Processing image...', 'info');
-            const orders = await processOrderImage(file);
-
-            if (orders.length > 0) {
-                addOrdersToTable(orders);
-                showNotification(`Successfully processed ${orders.length} orders`, 'success');
-                fileInput.value = ''; // Clear the file input
-            } else {
-                showNotification('No valid orders found in image', 'error');
-            }
+            await processFile(file);
         });
     }
+
+    // Initialize functionality
+    setupDragAndDrop();
+    addFilterControls();
 });
-
-// Notification helper (make sure this matches your existing notification style)
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    
-    Object.assign(notification.style, {
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
-        color: 'white',
-        padding: '15px',
-        borderRadius: '8px',
-        boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
-        fontSize: '16px',
-        zIndex: '1000'
-    });
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
