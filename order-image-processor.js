@@ -1,8 +1,15 @@
-// Shared state object for communication between modules
+// Initialize shared state
 window.orderProcessor = {
     processedOrders: [], // Store processed orders
     onOrdersProcessed: null, // Callback for when orders are processed
 };
+
+// Declare functions that need to be globally accessible
+let processFile;
+let showLoadingIndicator;
+let hideLoadingIndicator;
+let updateLoadingText;
+let showNotification;
 
 document.addEventListener('DOMContentLoaded', function() {
     async function initializeWorker() {
@@ -172,23 +179,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // UI Helper functions
-    function showLoadingIndicator(message) {
+    // Define UI Helper functions
+    showLoadingIndicator = function(message) {
         const loadingIndicator = document.getElementById('loading-indicator');
         if (loadingIndicator) {
             loadingIndicator.style.display = 'flex';
             updateLoadingText({ status: 'loading', message: message });
         }
-    }
+    };
 
-    function hideLoadingIndicator() {
+    hideLoadingIndicator = function() {
         const loadingIndicator = document.getElementById('loading-indicator');
         if (loadingIndicator) {
             loadingIndicator.style.display = 'none';
         }
-    }
+    };
 
-    function updateLoadingText(progress) {
+    updateLoadingText = function(progress) {
         const loadingText = document.querySelector('.loading-text');
         if (loadingText) {
             if (progress.status === 'loading') {
@@ -197,9 +204,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingText.textContent = `Processing image... ${Math.round(progress.progress * 100)}%`;
             }
         }
-    }
+    };
 
-    async function processFile(file) {
+    // Define process file function
+    processFile = async function(file) {
         showNotification('Processing image...', 'info');
         const orders = await processOrderImage(file);
 
@@ -219,7 +227,32 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             showNotification('No valid orders found in image', 'error');
         }
-    }
+    };
+
+    showNotification = function(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        
+        Object.assign(notification.style, {
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
+            color: 'white',
+            padding: '15px',
+            borderRadius: '8px',
+            boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
+            fontSize: '16px',
+            zIndex: '1000'
+        });
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    };
 
     // Event Listeners
     const processImageBtn = document.getElementById('process-image-btn');
@@ -245,3 +278,4 @@ document.addEventListener('DOMContentLoaded', function() {
 window.orderProcessor.processFile = processFile;
 window.orderProcessor.showLoadingIndicator = showLoadingIndicator;
 window.orderProcessor.hideLoadingIndicator = hideLoadingIndicator;
+window.orderProcessor.showNotification = showNotification;
