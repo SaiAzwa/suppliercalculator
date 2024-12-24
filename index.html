@@ -220,6 +220,32 @@ input[type="checkbox"] {
     color: #555;
     font-size: 14px;
 }
+.order-table input[disabled],
+.order-table select[disabled] {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    width: 100%;
+}
+
+.order-table input:not([disabled]),
+.order-table select:not([disabled]) {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.edit-order-btn,
+.save-order-btn,
+.delete-order-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+.additional-info-edit input {
+    margin-bottom: 4px;
+}
 </style>
 </head>
 <body>
@@ -265,18 +291,19 @@ input[type="checkbox"] {
 
     <!-- Orders Table -->
     <table class="order-table" id="orderTable">
-        <thead>
-            <tr>
-                <th>Service Type</th>
-                <th>Order Amount</th>
-                <th>Additional Info</th>
-                <th>Best Supplier</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Orders will be populated here -->
-        </tbody>
-    </table>
+    <thead>
+        <tr>
+            <th>Service Type</th>
+            <th>Order Amount</th>
+            <th>Additional Info</th>
+            <th>Best Supplier</th>
+            <th>Actions</th> <!-- New column for actions -->
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Orders will be populated here -->
+    </tbody>
+</table>
 </div>
 <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
 
