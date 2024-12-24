@@ -1,6 +1,6 @@
-// Your current order-image-import.js code
 document.addEventListener('DOMContentLoaded', function() {
     let processedOrders = []; // Store orders for filtering
+    let editingOrderIndex = -1; // Track which order is being edited
 
     async function initializeWorker() {
         const worker = await Tesseract.createWorker({
@@ -74,7 +74,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     serviceType: extractServiceType(parts.slice(6)),
                     timeSinceOrder: parts[parts.length - 3],
                     accountType: parts[parts.length - 2],
-                    customerName: parts[parts.length - 1]
+                    customerName: parts[parts.length - 1],
+                    isEditing: false // Add editing state to each order
                 };
 
                 console.log('Parsed order:', order);
@@ -122,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Order validation:', { order, isValid });
         return isValid;
     }
-
     // Add filter controls to the page
     function addFilterControls() {
         const filterContainer = document.createElement('div');
@@ -151,6 +151,92 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('clear-orders-btn')?.addEventListener('click', clearOrders);
     }
 
+    function updateOrderTable(orders) {
+        const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
+        if (!orderTable) return;
+
+        orderTable.innerHTML = '';
+        orders.forEach((order, index) => {
+            const newRow = document.createElement('tr');
+            if (order.isEditing) {
+                // Editable row
+                newRow.innerHTML = `
+                    <td>
+                        <select class="service-type-edit">
+                            <option value="Bank Transfer (Saver)" ${order.serviceType === 'Bank Transfer (Saver)' ? 'selected' : ''}>Bank Transfer (Saver)</option>
+                            <option value="Bank Transfer (Express)" ${order.serviceType === 'Bank Transfer (Express)' ? 'selected' : ''}>Bank Transfer (Express)</option>
+                            <option value="Alipay Transfer" ${order.serviceType === 'Alipay Transfer' ? 'selected' : ''}>Alipay Transfer</option>
+                            <option value="Enterprise to Enterprise" ${order.serviceType === 'Enterprise to Enterprise' ? 'selected' : ''}>Enterprise to Enterprise</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" class="order-amount-edit" value="${order.orderAmount}" step="0.01">
+                    </td>
+                    <td>
+                        <input type="text" class="ref-edit" value="${order.referenceNumber}" placeholder="Reference Number"><br>
+                        <input type="text" class="mark-edit" value="${order.markingNumber}" placeholder="Marking Number"><br>
+                        <input type="text" class="customer-edit" value="${order.customerName}" placeholder="Customer Name">
+                    </td>
+                    <td class="best-supplier">Calculating...</td>
+                    <td>
+                        <button class="btn save-btn" onclick="saveOrder(${index})">Save</button>
+                        <button class="btn cancel-btn" onclick="cancelEdit(${index})">Cancel</button>
+                    </td>
+                `;
+            } else {
+                // Display row
+                newRow.innerHTML = `
+                    <td>${order.serviceType}</td>
+                    <td>${order.orderAmount.toFixed(2)} CNY</td>
+                    <td>
+                        Ref: ${order.referenceNumber}<br>
+                        Mark: ${order.markingNumber}<br>
+                        Customer: ${order.customerName}
+                    </td>
+                    <td class="best-supplier">Calculating...</td>
+                    <td>
+                        <button class="btn edit-btn" onclick="editOrder(${index})">Edit</button>
+                        <button class="btn delete-btn" onclick="deleteOrder(${index})">Delete</button>
+                    </td>
+                `;
+            }
+            orderTable.appendChild(newRow);
+        });
+    }
+
+    function editOrder(index) {
+        processedOrders[index].isEditing = true;
+        updateOrderTable(processedOrders);
+    }
+
+    function saveOrder(index) {
+        const row = document.querySelector(`tr:nth-child(${index + 1})`);
+        processedOrders[index] = {
+            ...processedOrders[index],
+            serviceType: row.querySelector('.service-type-edit').value,
+            orderAmount: parseFloat(row.querySelector('.order-amount-edit').value),
+            referenceNumber: row.querySelector('.ref-edit').value,
+            markingNumber: row.querySelector('.mark-edit').value,
+            customerName: row.querySelector('.customer-edit').value,
+            isEditing: false
+        };
+        updateOrderTable(processedOrders);
+        showNotification('Order updated successfully', 'success');
+    }
+
+    function cancelEdit(index) {
+        processedOrders[index].isEditing = false;
+        updateOrderTable(processedOrders);
+    }
+
+    function deleteOrder(index) {
+        if (confirm('Are you sure you want to delete this order?')) {
+            processedOrders.splice(index, 1);
+            updateOrderTable(processedOrders);
+            showNotification('Order deleted successfully', 'success');
+        }
+    }
+
     function filterOrders() {
         const serviceType = document.getElementById('service-filter')?.value;
         const filteredOrders = serviceType ? 
@@ -166,26 +252,41 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification('All orders cleared', 'info');
     }
 
-    function updateOrderTable(orders) {
-        const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
-        if (!orderTable) return;
+    // Make functions available globally
+window.editOrder = editOrder;
+window.saveOrder = saveOrder;
+window.cancelEdit = cancelEdit;
+window.deleteOrder = deleteOrder;
+window.filterOrders = filterOrders;
+window.clearOrders = clearOrders;
+window.updateOrderTable = updateOrderTable;
+window.processedOrders = processedOrders; // Make the orders array accessible
+window.addFilterControls = addFilterControls;
 
-        orderTable.innerHTML = '';
-        orders.forEach(order => {
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td>${order.serviceType}</td>
-                <td>${order.orderAmount.toFixed(2)} CNY</td>
-                <td>
-                    Ref: ${order.referenceNumber}<br>
-                    Mark: ${order.markingNumber}<br>
-                    Customer: ${order.customerName}
-                </td>
-                <td class="best-supplier">Calculating...</td>
-            `;
-            orderTable.appendChild(newRow);
-        });
+    // Add manual order entry
+    function addManualOrder() {
+        const newOrder = {
+            date: new Date().toISOString().split('T')[0],
+            referenceNumber: '',
+            paymentMethod: '',
+            paymentAmount: 0,
+            markingNumber: '',
+            orderAmount: 0,
+            serviceType: '',
+            timeSinceOrder: 'just now',
+            accountType: '',
+            customerName: '',
+            isEditing: true  // Start in edit mode
+        };
+        processedOrders.unshift(newOrder);  // Add to beginning of array
+        updateOrderTable(processedOrders);
+        showNotification('New order added', 'info');
     }
+
+    // Validate order data before saving
+    function validateOrder(orderData) {
+        if (!orderData.serviceType) {
+            throw new Error('Service type
 
     // Setup drag and drop functionality
     function setupDragAndDrop() {
@@ -317,7 +418,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Add event listener for manual order entry
+    const addOrderBtn = document.getElementById('add-order-btn');
+    if (addOrderBtn) {
+        addOrderBtn.addEventListener('click', () => {
+            addManualOrder();
+        });
+    }
+
     // Initialize functionality
     setupDragAndDrop();
     addFilterControls();
+
+    // Make helper functions available globally
+    window.showNotification = showNotification;
+    window.showLoadingIndicator = showLoadingIndicator;
+    window.hideLoadingIndicator = hideLoadingIndicator;
+    window.processFile = processFile;
 });
