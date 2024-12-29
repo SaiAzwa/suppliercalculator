@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Ensure window.orderProcessor is initialized
+    if (!window.orderProcessor) {
+        console.error('window.orderProcessor is not initialized');
+        return;
+    }
+
     async function initializeWorker() {
         const worker = await Tesseract.createWorker({
             logger: m => {
@@ -30,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 !order.serviceType.includes('VIP') &&
                 !order.serviceType.includes('1688 PAYMENT')
             );
-            console.log('Filtered orders:', filteredOrders);
 
             await worker.terminate();
             return filteredOrders;
