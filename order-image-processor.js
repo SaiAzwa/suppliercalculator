@@ -80,7 +80,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     serviceType: extractServiceType(match[7]),
                     timeSinceOrder: 'N/A', // Not in the image
                     accountType: 'N/A', // Not in the image
-                    customerName: 'N/A', // Not in the image
                     additionalQuestions: [], // Will be added manually
                     requiresAdditionalQuestions: true // Mark for manual input
                 };
