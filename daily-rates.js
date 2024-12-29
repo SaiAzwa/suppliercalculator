@@ -204,6 +204,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Update daily rate section on load
     updateDailyRateSection();
 
+    // Add event listener to the "Update Daily Rates" button
+    const dailyRatesBtn = document.getElementById('DailyRatesBtn');
+    if (dailyRatesBtn) {
+        dailyRatesBtn.addEventListener('click', updateDailyRateSection);
+    }
+
     // Listen for supplier updates
     window.addEventListener('suppliersUpdated', function() {
         updateDailyRateSection();
