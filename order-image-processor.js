@@ -198,6 +198,12 @@ document.addEventListener('DOMContentLoaded', function () {
         window.sharedUtils.showNotification('Processing image...', 'info');
         const orders = await processOrderImage(file);
 
+        // Ensure window.orderProcessor is initialized
+        if (!window.orderProcessor) {
+            console.error('window.orderProcessor is not initialized');
+            return;
+        }
+
         if (orders.length > 0) {
             window.orderProcessor.processedOrders = [
                 ...window.orderProcessor.processedOrders,
