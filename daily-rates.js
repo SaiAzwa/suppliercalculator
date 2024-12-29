@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showNotification('Daily rates cleared', 'success');
     }
 
+    // Function to update the daily rate section in the UI
     function updateDailyRateSection() {
         const dailyRateSection = document.getElementById('daily-rate-section');
         if (!dailyRateSection) {
@@ -129,10 +130,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const saveButton = document.createElement('button');
         saveButton.textContent = 'Save Rates';
         saveButton.style.marginRight = '10px';
+        saveButton.style.backgroundColor = '#007bff';
+        saveButton.style.color = '#fff';
+        saveButton.style.border = 'none';
+        saveButton.style.padding = '8px 12px';
+        saveButton.style.borderRadius = '4px';
+        saveButton.style.cursor = 'pointer';
         saveButton.addEventListener('click', saveDailyRates);
 
         const clearButton = document.createElement('button');
         clearButton.textContent = 'Clear Rates';
+        clearButton.style.backgroundColor = '#dc3545';
+        clearButton.style.color = '#fff';
+        clearButton.style.border = 'none';
+        clearButton.style.padding = '8px 12px';
+        clearButton.style.borderRadius = '4px';
+        clearButton.style.cursor = 'pointer';
         clearButton.addEventListener('click', clearRates);
 
         buttonContainer.appendChild(saveButton);
@@ -140,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
         dailyRateSection.appendChild(buttonContainer);
     }
 
+    // Function to save daily rates
     function saveDailyRates() {
         const rateInputs = document.querySelectorAll('#daily-rate-section input');
         if (!rateInputs || rateInputs.length === 0) {
