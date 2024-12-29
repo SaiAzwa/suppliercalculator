@@ -115,4 +115,6 @@ document.addEventListener('DOMContentLoaded', function () {
         clearOrders,
         updateOrderTable
     };
+
+    console.log('tableManager initialized:', window.tableManager);
 });
