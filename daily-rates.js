@@ -201,13 +201,23 @@ document.addEventListener('DOMContentLoaded', function () {
     // Load rates from localStorage on page load
     loadRatesFromLocalStorage();
 
-    // Update daily rate section on load
-    updateDailyRateSection();
-
-    // Add event listener to the "Update Daily Rates" button
+    // Add event listener to the "Update Daily Rates" button for toggle functionality
     const dailyRatesBtn = document.getElementById('DailyRatesBtn');
-    if (dailyRatesBtn) {
-        dailyRatesBtn.addEventListener('click', updateDailyRateSection);
+    const dailyRateSection = document.getElementById('daily-rate-section');
+
+    if (dailyRatesBtn && dailyRateSection) {
+        // Hide the daily rate section by default
+        dailyRateSection.style.display = 'none';
+
+        // Toggle visibility when the button is clicked
+        dailyRatesBtn.addEventListener('click', function () {
+            if (dailyRateSection.style.display === 'none') {
+                dailyRateSection.style.display = 'block';
+                updateDailyRateSection(); // Update the content when shown
+            } else {
+                dailyRateSection.style.display = 'none';
+            }
+        });
     }
 
     // Listen for supplier updates
