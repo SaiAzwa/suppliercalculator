@@ -360,11 +360,156 @@
         </table>
     </div>
 
-    <!-- Supplier Management Section -->
+   <!-- Supplier Management Section -->
     <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
+
     <div class="container hidden" id="supplierManagementSection">
         <h2>Supplier Management</h2>
-        <!-- Supplier management content here -->
+
+        <h3>Daily Rate</h3>
+        <div id="daily-rate-section"></div>
+
+        <h3>Add/Edit Supplier</h3>
+        <div class="form-row">
+            <label for="supplier-name">Supplier Name</label>
+            <input type="text" id="supplier-name" placeholder="Enter supplier name">
+        </div>
+        
+        <div class="form-row">
+            <label for="supplier-status">Status</label>
+            <div class="status-wrapper">
+                <input type="checkbox" id="supplier-status" name="supplier-status" checked>
+                <span>Active</span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label for="service-type">Service Type</label>
+            <select id="service-type">
+                <option value="bank-express">Bank Transfer (Express)</option>
+                <option value="bank-saver">Bank Transfer (Saver)</option>
+                <option value="enterprise">Enterprise to Enterprise</option>
+                <option value="usd-transfer">Bank Transfer (USD)</option>
+                <option value="alipay">Alipay Transfer</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label>Amount Limits</label>
+            <div id="amount-limits-section"></div>
+        </div>
+        <button class="btn" id="add-amount-range-btn">Add Amount Range</button>
+
+        <div class="form-row">
+            <label>Service Charges</label>
+            <div id="service-charge-section"></div>
+        </div>
+        <button class="btn" id="add-service-charge-btn">Add Service Charge</button>
+
+        <h3>Additional Questions</h3>
+        <div id="additional-questions-container"></div>
+
+        <button class="btn" id="add-supplier-btn">Add Supplier</button>
+
+        <h3>Supplier Information</h3>
+        <button id="sync-suppliers-btn" class="btn">Sync Suppliers to Google Sheet</button>
+        <button id="fetch-suppliers-btn" class="btn">Fetch Suppliers from Google Sheets</button>
+        
+        <div class="tabs" id="service-tabs">
+            <div class="tab" data-service="bank-express">Bank Transfer (Express)</div>
+            <div class="tab" data-service="bank-saver">Bank Transfer (Saver)</div>
+            <div class="tab" data-service="enterprise">Enterprise to Enterprise</div>
+            <div class="tab" data-service="usd-transfer">Bank Transfer (USD)</div>
+            <div class="tab" data-service="alipay">Alipay Transfer</div>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div id="tab-content-container">
+            <!-- Bank Express Tab -->
+            <div class="tab-content" id="bank-express-tab">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount Limits</th>
+                            <th>Service Charges</th>
+                            <th>Additional Questions</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bank-express-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Bank Saver Tab -->
+            <div class="tab-content" id="bank-saver-tab">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount Limits</th>
+                            <th>Service Charges</th>
+                            <th>Additional Questions</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bank-saver-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Enterprise Tab -->
+            <div class="tab-content" id="enterprise-tab">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount Limits</th>
+                            <th>Service Charges</th>
+                            <th>Additional Questions</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="enterprise-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- USD Transfer Tab -->
+            <div class="tab-content" id="usd-transfer-tab">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount Limits</th>
+                            <th>Service Charges</th>
+                            <th>Additional Questions</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usd-transfer-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Alipay Tab -->
+            <div class="tab-content" id="alipay-tab">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount Limits</th>
+                            <th>Service Charges</th>
+                            <th>Additional Questions</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alipay-table-body"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Popup Container -->
