@@ -255,4 +255,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Initialize drag and drop
     setupDragAndDrop();
-});
+});k
