@@ -9,7 +9,6 @@ let processFile;
 let showLoadingIndicator;
 let hideLoadingIndicator;
 let updateLoadingText;
-let showNotification;
 
 document.addEventListener('DOMContentLoaded', function() {
     async function initializeWorker() {
@@ -48,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return filteredOrders;
         } catch (error) {
             console.error('Error processing image:', error);
-            showNotification('Error processing image', 'error');
+            window.sharedUtils.showNotification('Error processing image', 'error');
             return [];
         } finally {
             hideLoadingIndicator();
@@ -175,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('order-image').files = dt.files;
             await processFile(file);
         } else {
-            showNotification('Please drop an image file', 'error');
+            window.sharedUtils.showNotification('Please drop an image file', 'error');
         }
     }
 
@@ -208,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Define process file function
     processFile = async function(file) {
-        showNotification('Processing image...', 'info');
+        window.sharedUtils.showNotification('Processing image...', 'info');
         const orders = await processOrderImage(file);
 
         if (orders.length > 0) {
@@ -222,36 +221,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.orderProcessor.onOrdersProcessed(window.orderProcessor.processedOrders);
             }
 
-            showNotification(`Successfully processed ${orders.length} orders`, 'success');
+            window.sharedUtils.showNotification(`Successfully processed ${orders.length} orders`, 'success');
             document.getElementById('order-image').value = '';
         } else {
-            showNotification('No valid orders found in image', 'error');
+            window.sharedUtils.showNotification('No valid orders found in image', 'error');
         }
-    };
-
-    showNotification = function(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
-        
-        Object.assign(notification.style, {
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
-            color: 'white',
-            padding: '15px',
-            borderRadius: '8px',
-            boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
-            fontSize: '16px',
-            zIndex: '1000'
-        });
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
     };
 
     // Event Listeners
@@ -262,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = fileInput?.files[0];
 
             if (!file) {
-                showNotification('Please select an image file first', 'error');
+                window.sharedUtils.showNotification('Please select an image file first', 'error');
                 return;
             }
 
@@ -278,4 +252,3 @@ document.addEventListener('DOMContentLoaded', function() {
 window.orderProcessor.processFile = processFile;
 window.orderProcessor.showLoadingIndicator = showLoadingIndicator;
 window.orderProcessor.hideLoadingIndicator = hideLoadingIndicator;
-window.orderProcessor.showNotification = showNotification;
