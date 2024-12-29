@@ -146,9 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${order.orderAmount.toFixed(2)} CNY</td>
                 <td>
                     Ref: ${order.referenceNumber}<br>
-                    Mark: ${order.markingNumber}
-                </td>
-                <td>
+                    Mark: ${order.markingNumber}<br>
                     ${order.additionalQuestions.map(q => `${q.label}: ${q.value}`).join('<br>')}
                 </td>
                 <td class="best-supplier">Calculating...</td>
