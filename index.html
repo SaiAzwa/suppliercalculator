@@ -269,23 +269,22 @@ input[type="checkbox"] {
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
 }
 
 .popup-content {
     background: white;
     padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     max-width: 500px;
     width: 100%;
 }
 
-.popup-content .form-control {
-    margin-bottom: 10px;
-}
-
-.popup-content .btn {
-    margin-right: 10px;
+.warning {
+    color: red;
+    cursor: pointer;
+    font-weight: bold;
 }
 </style>
 </head>
