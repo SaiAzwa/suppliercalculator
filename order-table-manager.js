@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>
                         <button class="btn edit-btn" onclick="editOrder(${index})">Edit</button>
                         <button class="btn delete-btn" onclick="deleteOrder(${index})">Delete</button>
+                        ${order.requiresAdditionalQuestions ? '<span class="warning">!</span>' : ''}
                     </td>
                 `;
             }
@@ -134,7 +135,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     label: input.previousElementSibling.textContent.trim(),
                     value: input.value
                 })),
-                isEditing: false
+                isEditing: false,
+                requiresAdditionalQuestions: false // Clear the "!" after saving
             };
 
             validateOrder(updatedOrder);
