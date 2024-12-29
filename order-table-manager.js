@@ -86,6 +86,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Define editOrder function
+    function editOrder(index) {
+        const order = window.orderProcessor.processedOrders[index];
+        console.log('Editing order:', order);
+        // Add your edit logic here (e.g., open a pop-up form)
+        window.sharedUtils.showNotification(`Editing order at index ${index}`, 'info');
+    }
+
+    // Define deleteOrder function
+    function deleteOrder(index) {
+        if (confirm('Are you sure you want to delete this order?')) {
+            window.orderProcessor.processedOrders.splice(index, 1);
+            updateOrderTable(window.orderProcessor.processedOrders);
+            window.sharedUtils.showNotification('Order deleted successfully', 'success');
+        }
+    }
+
     // Initialize functionality
     addFilterControls();
     updateOrderTable(window.orderProcessor.processedOrders);
