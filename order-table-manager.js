@@ -62,12 +62,96 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>
                     <button class="btn edit-btn" onclick="tableManager.editOrder(${index})">Edit</button>
                     <button class="btn delete-btn" onclick="tableManager.deleteOrder(${index})">Delete</button>
-                    ${order.requiresAdditionalQuestions ? '<span class="warning">!</span>' : ''}
+                    ${order.requiresAdditionalQuestions ? '<span class="warning" onclick="tableManager.showAdditionalQuestionsPopup(' + index + ')">!</span>' : ''}
                 </td>
             `;
             orderTable.appendChild(newRow);
         });
     }
+
+    // Function to show the additional questions popup
+    window.tableManager.showAdditionalQuestionsPopup = function(index) {
+        const order = window.orderProcessor.processedOrders[index];
+        if (!order) return;
+
+        // Create the popup
+        const popup = document.createElement('div');
+        popup.className = 'popup';
+        popup.innerHTML = `
+            <div class="popup-content">
+                <h3>Additional Questions for Order ${order.referenceNumber}</h3>
+                <div id="additional-questions-form"></div>
+                <button class="btn" onclick="tableManager.saveAdditionalQuestions(${index})">Save</button>
+                <button class="btn" onclick="tableManager.closePopup()">Close</button>
+            </div>
+        `;
+
+        // Add the popup to the body
+        document.body.appendChild(popup);
+
+        // Populate the additional questions form based on the service type
+        const form = popup.querySelector('#additional-questions-form');
+        const questions = getAdditionalQuestionsForService(order.serviceType);
+        questions.forEach(question => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'form-group';
+            questionDiv.innerHTML = `
+                <label>${question.label}</label>
+                <select class="question-answer">
+                    ${question.options.map(option => `<option value="${option}">${option}</option>`).join('')}
+                </select>
+            `;
+            form.appendChild(questionDiv);
+        });
+    };
+
+    // Function to get additional questions based on the service type
+    function getAdditionalQuestionsForService(serviceType) {
+        const additionalQuestionsMap = {
+            'Alipay Transfer': [
+                { label: 'English Account', options: ['Yes', 'No'] },
+                { label: 'Chinese Account', options: ['Yes', 'No'] }
+            ],
+            'Bank Transfer (Express)': [
+                { label: 'English Account', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', options: ['Yes', 'No'] }
+            ],
+            'Bank Transfer (Saver)': [
+                { label: 'English Account', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', options: ['Yes', 'No'] }
+            ]
+        };
+
+        return additionalQuestionsMap[serviceType] || [];
+    }
+
+    // Function to save additional questions
+    window.tableManager.saveAdditionalQuestions = function(index) {
+        const order = window.orderProcessor.processedOrders[index];
+        if (!order) return;
+
+        const popup = document.querySelector('.popup');
+        const questions = Array.from(popup.querySelectorAll('.form-group')).map(group => {
+            const label = group.querySelector('label').textContent;
+            const value = group.querySelector('.question-answer').value;
+            return { label, value };
+        });
+
+        order.additionalQuestions = questions;
+        order.requiresAdditionalQuestions = false; // Mark as resolved
+
+        // Close the popup and update the table
+        tableManager.closePopup();
+        updateOrderTable(window.orderProcessor.processedOrders);
+    };
+
+    // Function to close the popup
+    window.tableManager.closePopup = function() {
+        const popup = document.querySelector('.popup');
+        if (popup) popup.remove();
+    };
 
     function filterOrders() {
         const serviceType = document.getElementById('service-filter')?.value;
@@ -113,7 +197,10 @@ document.addEventListener('DOMContentLoaded', function () {
         deleteOrder,
         filterOrders,
         clearOrders,
-        updateOrderTable
+        updateOrderTable,
+        showAdditionalQuestionsPopup,
+        saveAdditionalQuestions,
+        closePopup
     };
 
     console.log('tableManager initialized:', window.tableManager);
