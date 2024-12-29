@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 !order.serviceType.includes('VIP') &&
                 !order.serviceType.includes('1688 PAYMENT')
             );
+            console.log('Filtered orders:', filteredOrders);
 
             await worker.terminate();
             return filteredOrders;
