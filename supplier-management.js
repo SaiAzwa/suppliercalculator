@@ -93,15 +93,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 suppliers.data.push(supplierData);
                 console.log('Added new supplier. Current state:', suppliers.data);
-                showNotification(`Supplier "${name}" added successfully!`, 'success');
+                window.sharedUtils.showNotification(`Supplier "${name}" added successfully!`, 'success');
             } else {
                 // Updating existing supplier
                 suppliers.data[editingSupplierIndex] = supplierData;
                 editingSupplierIndex = -1;
                 document.getElementById('add-supplier-btn').textContent = 'Add Supplier';
-                showNotification(`Supplier "${name}" updated successfully!`, 'success');
+                window.sharedUtils.showNotification(`Supplier "${name}" updated successfully!`, 'success');
             }
-
             // Save to state and trigger sync
             suppliers.save();
             logStateAfterSave();
@@ -129,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error in addOrUpdateSupplier:', error);
-            showNotification('Error adding/updating supplier', 'error');
+            window.sharedUtils.showNotification('Error adding/updating supplier', 'error');
         }
     }
 
@@ -189,10 +188,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error in editSupplier:', error);
-            showNotification('Error loading supplier for editing', 'error');
+            window.sharedUtils.showNotification('Error loading supplier for editing', 'error');
         }
     }
-
     function handleAdditionalQuestions(serviceType) {
         console.log('Handling additional questions for service type:', serviceType);
         const questionsContainer = document.getElementById('additional-questions-container');
@@ -330,29 +328,3 @@ document.addEventListener('DOMContentLoaded', function () {
         handleAdditionalQuestions(initialServiceType);
     }
 });
-
-// Global notification function
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    
-    Object.assign(notification.style, {
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
-        color: 'white',
-        padding: '15px',
-        borderRadius: '8px',
-        boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
-        fontSize: '16px',
-        zIndex: '1000'
-    });
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
