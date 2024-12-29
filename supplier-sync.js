@@ -51,16 +51,16 @@ const supplierSync = {
                 window.suppliersState.data = formattedData;
                 window.suppliersState.save();
                 window.dispatchEvent(new Event('suppliersUpdated'));
-                showNotification('Suppliers data loaded successfully', 'success');
+                window.sharedUtils.showNotification('Suppliers data loaded successfully', 'success');
             } else {
                 console.error('suppliersState not found');
-                showNotification('Error: Unable to update state', 'error');
+                window.sharedUtils.showNotification('Error: Unable to update state', 'error');
             }
 
             return formattedData;
         } catch (error) {
             console.error('Error fetching data:', error);
-            showNotification('Failed to fetch suppliers data', 'error');
+            window.sharedUtils.showNotification('Failed to fetch suppliers data', 'error');
             return null;
         }
     },
@@ -108,11 +108,11 @@ const supplierSync = {
 
             const result = await response.json();
             console.log('SheetDB save response:', result);
-            showNotification('Suppliers data saved successfully', 'success');
+            window.sharedUtils.showNotification('Suppliers data saved successfully', 'success');
             return true;
         } catch (error) {
             console.error('Error saving to API:', error);
-            showNotification('Failed to save suppliers data', 'error');
+            window.sharedUtils.showNotification('Failed to save suppliers data', 'error');
             return false;
         }
     },
@@ -134,11 +134,11 @@ const supplierSync = {
 
             const data = await response.json();
             console.log('Delete response:', data);
-            showNotification('Supplier deleted successfully', 'success');
+            window.sharedUtils.showNotification('Supplier deleted successfully', 'success');
             return true;
         } catch (error) {
             console.error('Error deleting supplier:', error);
-            showNotification('Failed to delete supplier', 'error');
+            window.sharedUtils.showNotification('Failed to delete supplier', 'error');
             return false;
         }
     },
@@ -165,11 +165,11 @@ const supplierSync = {
 
             const result = await response.json();
             console.log('Status update response:', result);
-            showNotification('Supplier status updated successfully', 'success');
+            window.sharedUtils.showNotification('Supplier status updated successfully', 'success');
             return true;
         } catch (error) {
             console.error('Error updating supplier status:', error);
-            showNotification('Failed to update supplier status', 'error');
+            window.sharedUtils.showNotification('Failed to update supplier status', 'error');
             return false;
         }
     },
@@ -199,7 +199,7 @@ const supplierSync = {
         // Listen for state changes
         window.addEventListener('suppliersStateChanged', () => {
             console.log('Suppliers state changed - manual sync required');
-            showNotification('Changes detected - Click "Sync" to save to Google Sheets', 'info');
+            window.sharedUtils.showNotification('Changes detected - Click "Sync" to save to Google Sheets', 'info');
         });
 
         console.log('Supplier sync initialized');
@@ -213,29 +213,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for use in other files
 window.supplierSync = supplierSync;
-
-// Helper notification function
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    
-    Object.assign(notification.style, {
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b',
-        color: 'white',
-        padding: '15px',
-        borderRadius: '8px',
-        boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)',
-        fontSize: '16px',
-        zIndex: '1000'
-    });
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
