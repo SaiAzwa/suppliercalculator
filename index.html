@@ -290,59 +290,74 @@ input[type="checkbox"] {
 </style>
 </head>
 <body>
-<div class="calculator-container">
-    <h2>Supplier Determination Calculator</h2>
-    
-    <!-- Image Upload Section with Drag and Drop -->
-    <div class="form-group">
-        <div class="drop-zone" id="drop-zone">
-            <div class="drop-zone-text">Drag and drop image here or</div>
-            <div class="file-input-wrapper">
-                <input type="file" id="order-image" accept="image/*" class="form-control">
-                <button class="btn" id="process-image-btn">Process Orders Image</button>
+    <!-- New Multi-Step Order Extraction Section -->
+    <div class="calculator-container">
+        <h2>How would you extract your order?</h2>
+        <div id="page1">
+            <button class="btn" id="imageBtn">Image</button>
+            <button class="btn" id="excelBtn">Excel</button>
+            <button class="btn" id="manualBtn">Manual</button>
+        </div>
+
+        <!-- Image Input -->
+        <div id="imageInput" style="display: none;">
+            <h2>Upload Image</h2>
+            <div class="drop-zone" id="drop-zone">
+                <div class="drop-zone-text">Drag and drop image here or</div>
+                <div class="file-input-wrapper">
+                    <input type="file" id="order-image" accept="image/*" class="form-control">
+                    <button class="btn" id="process-image-btn">Process Orders Image</button>
+                </div>
             </div>
         </div>
+
+        <!-- Excel Input -->
+        <div id="excelInput" style="display: none;">
+            <h2>Upload Excel</h2>
+            <input type="file" id="order-excel" accept=".xlsx, .xls" class="form-control">
+            <button class="btn" id="process-excel-btn">Process Excel</button>
+        </div>
+
+        <!-- Manual Input -->
+        <div id="manualInput" style="display: none;">
+            <h2>Manual Order Form</h2>
+            <div class="form-group">
+                <label for="serviceType">Select Service Type:</label>
+                <select id="serviceType">
+                    <option value="">Select a service</option>
+                    <option value="bankTransferSaver">Bank Transfer (Saver)</option>
+                    <option value="bankTransferExpress">Bank Transfer (Express)</option>
+                    <option value="bankTransferUSD">Bank Transfer (USD)</option>
+                    <option value="enterpriseToEnterprise">Enterprise to Enterprise</option>
+                    <option value="alipay">Alipay</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="orderAmount">Enter Order Amount (must be > 0.01):</label>
+                <input type="number" id="orderAmount" min="0.01" step="0.01" placeholder="Enter amount">
+            </div>
+            <div id="additionalQuestions"></div>
+            <button class="btn" id="createOrderBtn">Create Order</button>
+        </div>
+
+        <!-- Order Table and Calculate Best Supplier Button -->
+        <h2>Orders</h2>
+        <button class="btn" id="calculateBestSupplierBtn">Calculate the Best Supplier</button>
+        <table class="order-table" id="orderTable">
+            <thead>
+                <tr>
+                    <th>Service Type</th>
+                    <th>Order Amount</th>
+                    <th>Additional Info</th>
+                    <th>Best Supplier</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Orders will be populated here -->
+            </tbody>
+        </table>
     </div>
-
-<div class="form-group">
-    <label for="serviceType">Select Service Type:</label>
-    <select id="serviceType">
-        <option value="">Select a service</option>
-        <option value="bankTransferSaver">Bank Transfer (Saver)</option>
-        <option value="bankTransferExpress">Bank Transfer (Express)</option>
-        <option value="bankTransferUSD">Bank Transfer (USD)</option>
-        <option value="enterpriseToEnterprise">Enterprise to Enterprise</option>
-        <option value="alipay">Alipay</option>
-    </select>
-</div>
-
-<div class="form-group">
-    <label for="orderAmount">Enter Order Amount (must be > 0.01):</label>
-    <input type="number" id="orderAmount" min="0.01" step="0.01" placeholder="Enter amount">
-</div>
-
-<div id="additionalQuestions"></div>
-    
-    <!-- Action Buttons -->
-    <button class="btn" id="createOrderBtn">Create Order</button>
-    <button class="btn" id="calculateBestSupplierBtn">Calculate the Best Supplier</button>
-
-    <!-- Orders Table -->
-    <table class="order-table" id="orderTable">
-    <thead>
-        <tr>
-            <th>Service Type</th>
-            <th>Order Amount</th>
-            <th>Additional Info</th>
-            <th>Best Supplier</th>
-            <th>Actions</th> <!-- New column for actions -->
-        </tr>
-    </thead>
-    <tbody>
-        <!-- Orders will be populated here -->
-    </tbody>
-</table>
-</div>
 <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
 
 <div class="container hidden" id="supplierManagementSection">
