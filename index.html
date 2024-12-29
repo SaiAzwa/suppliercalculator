@@ -277,15 +277,15 @@
     width: 100%;
     }
 
-    .button-container {
+   .button-container {
     display: flex;
     gap: 10px;
     margin: 15px 0;
-    }
+}
 
-    .btn.toggle-btn {
-    flex: 1;
-    padding: 10px 12px;
+.btn.toggle-btn {
+    flex: none; /* Prevent buttons from stretching */
+    padding: 10px 8px; /* Reduce horizontal padding */
     font-weight: 600;
     background-color: var(--secondary-color);
     color: #ffffff;
@@ -293,11 +293,12 @@
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.3s;
-    }
+    width: 150px; /* Set a fixed width */
+}
 
-    .btn.toggle-btn:hover {
+.btn.toggle-btn:hover {
     background-color: #059669;
-    }
+}
 </style>
 </head>
 <body>
@@ -375,6 +376,7 @@
         <button class="btn toggle-btn" id="DailyRatesBtn">Update Daily Rates</button>
         <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
     </div>
+    
     <div class="container hidden" id="dailyratesection">
         <h2>Daily Rates</h2>
         <div id="daily-rate-section"></div>
