@@ -6,287 +6,289 @@
     <title>Supplier Determination and Management System</title>
     <!-- Add Tesseract.js CDN -->
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
-<style>
-:root {
-    --primary-color: #007BFF;
-    --secondary-color: #10b981;
-    --bg-color: #f3f4f6;
-    --text-color: #333;
-    --border-color: #ccc;
-}
+    <style>
+        :root {
+            --primary-color: #007BFF;
+            --secondary-color: #10b981;
+            --bg-color: #f3f4f6;
+            --text-color: #333;
+            --border-color: #ccc;
+        }
 
-body {
-    font-family: 'Inter', sans-serif;
-    background-color: var(--bg-color);
-    margin: 0;
-    padding: 20px;
-    color: var(--text-color);
-}
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
 
-.container, .calculator-container {
-    max-width: 1200px;
-    margin: 20px auto;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    padding: 25px;
-}
+        .container, .calculator-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
 
-.form-group, .form-row {
-    margin-bottom: 20px;
-}
+        .form-group, .form-row {
+            margin-bottom: 20px;
+        }
 
-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #555;
-}
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
 
-input[type="text"],
-input[type="number"],
-input[type="file"],
-select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background-color: #f9f9fb;
-    transition: border-color 0.3s;
-    box-sizing: border-box;
-}
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: #f9f9fb;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
 
-input[type="checkbox"] {
-    width: auto;
-    margin-right: 8px;
-    cursor: pointer;
-}
+        input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            cursor: pointer;
+        }
 
-/* Drag and Drop styles */
-.drop-zone {
-    border: 2px dashed #ccc;
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 20px;
-    transition: border 0.3s ease, background-color 0.3s ease;
-    background-color: #f9f9fb;
-    cursor: pointer;
-}
+        /* Drag and Drop styles */
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: border 0.3s ease, background-color 0.3s ease;
+            background-color: #f9f9fb;
+            cursor: pointer;
+        }
 
-.drop-zone.dragover {
-    border-color: var(--primary-color);
-    background-color: #f0f7ff;
-}
+        .drop-zone.dragover {
+            border-color: var(--primary-color);
+            background-color: #f0f7ff;
+        }
 
-.drop-zone-text {
-    color: #666;
-    margin-bottom: 10px;
-    font-size: 16px;
-}
+        .drop-zone-text {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
 
-.file-input-wrapper {
-    display: inline-block;
-}
+        .file-input-wrapper {
+            display: inline-block;
+        }
 
-.file-input-wrapper input[type="file"] {
-    margin-bottom: 10px;
-}
+        .file-input-wrapper input[type="file"] {
+            margin-bottom: 10px;
+        }
 
-/* Loading indicator styles */
-#loading-indicator {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
+        /* Loading indicator styles */
+        #loading-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
 
-.loading-spinner {
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-}
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-.loading-text {
-    color: white;
-    margin-top: 20px;
-    font-size: 18px;
-}
-/* Button and Interactive Element Styles */
-.btn {
-    display: inline-block;
-    padding: 12px 24px;
-    background-color: var(--primary-color);
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s;
-    margin: 5px;
-}
+        .loading-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 18px;
+        }
 
-.btn:hover {
-    background-color: #0056b3;
-}
+        /* Button and Interactive Element Styles */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
 
-.toggle-btn {
-    display: block;
-    margin: 15px auto;
-    background-color: var(--secondary-color);
-    padding: 10px 24px;
-    font-weight: 600;
-}
+        .btn:hover {
+            background-color: #0056b3;
+        }
 
-.toggle-btn:hover {
-    background-color: #059669;
-}
+        .toggle-btn {
+            display: block;
+            margin: 15px auto;
+            background-color: var(--secondary-color);
+            padding: 10px 24px;
+            font-weight: 600;
+        }
 
-/* Table Styles */
-.order-table, table {
-    width: 100%;
-    margin-top: 25px;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-radius: 10px;
-    overflow: hidden;
-}
+        .toggle-btn:hover {
+            background-color: #059669;
+        }
 
-.order-table th, .order-table td, th, td {
-    border-bottom: 1px solid #e0e0e0;
-    padding: 12px 15px;
-    text-align: center;
-    color: var(--text-color);
-}
+        /* Table Styles */
+        .order-table, table {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
 
-.order-table th {
-    background-color: #f1f5f9;
-    font-weight: 600;
-    color: #444;
-}
+        .order-table th, .order-table td, th, td {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 15px;
+            text-align: center;
+            color: var(--text-color);
+        }
 
-/* Tab Styles */
-.tab {
-    display: inline-block;
-    padding: 12px 20px;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    font-weight: 500;
-    color: #555;
-    transition: color 0.3s, border-color 0.3s;
-}
+        .order-table th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #444;
+        }
 
-.tab.active {
-    border-bottom: 2px solid var(--primary-color);
-    color: var(--primary-color);
-}
+        /* Tab Styles */
+        .tab {
+            display: inline-block;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            color: #555;
+            transition: color 0.3s, border-color 0.3s;
+        }
 
-.tab-content {
-    display: none;
-    margin-top: 20px;
-}
+        .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
 
-.tab-content.active {
-    display: block;
-}
+        .tab-content {
+            display: none;
+            margin-top: 20px;
+        }
 
-.hidden {
-    display: none;
-}
+        .tab-content.active {
+            display: block;
+        }
 
-/* Status Wrapper Styles */
-.status-wrapper {
-    display: flex;
-    align-items: center;
-    margin-top: 5px;
-}
+        .hidden {
+            display: none;
+        }
 
-.status-wrapper span {
-    color: #555;
-    font-size: 14px;
-}
-.order-table input[disabled],
-.order-table select[disabled] {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    width: 100%;
-}
+        /* Status Wrapper Styles */
+        .status-wrapper {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
 
-.order-table input:not([disabled]),
-.order-table select:not([disabled]) {
-    background: #fff;
-    border: 1px solid var(--border-color);
-    padding: 4px;
-    border-radius: 4px;
-}
+        .status-wrapper span {
+            color: #555;
+            font-size: 14px;
+        }
 
-.edit-order-btn,
-.save-order-btn,
-.delete-order-btn {
-    padding: 6px 12px;
-    font-size: 14px;
-}
+        .order-table input[disabled],
+        .order-table select[disabled] {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            width: 100%;
+        }
 
-.additional-info-edit input {
-    margin-bottom: 4px;
-}
+        .order-table input:not([disabled]),
+        .order-table select:not([disabled]) {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 4px;
+            border-radius: 4px;
+        }
 
-.warning {
-    color: #ff0000; /* Red color */
-    font-weight: bold;
-    font-size: 18px;
-    margin-left: 10px;
-    cursor: pointer;
-}
+        .edit-order-btn,
+        .save-order-btn,
+        .delete-order-btn {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
 
-.warning:hover {
-    transform: scale(1.2); /* Slightly enlarge on hover */
-}
+        .additional-info-edit input {
+            margin-bottom: 4px;
+        }
 
-.popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
+        .warning {
+            color: #ff0000; /* Red color */
+            font-weight: bold;
+            font-size: 18px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
 
-.popup-content {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    max-width: 500px;
-    width: 100%;
-}
+        .warning:hover {
+            transform: scale(1.2); /* Slightly enlarge on hover */
+        }
 
-.warning {
-    color: red;
-    cursor: pointer;
-    font-weight: bold;
-}
-</style>
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .warning {
+            color: red;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <!-- New Multi-Step Order Extraction Section -->
@@ -357,164 +359,25 @@ input[type="checkbox"] {
             </tbody>
         </table>
     </div>
-<button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
 
-<div class="container hidden" id="supplierManagementSection">
-    <h2>Supplier Management</h2>
-
-    <h3>Daily Rate</h3>
-    <div id="daily-rate-section"></div>
-
-    <h3>Add/Edit Supplier</h3>
-    <div class="form-row">
-        <label for="supplier-name">Supplier Name</label>
-        <input type="text" id="supplier-name" placeholder="Enter supplier name">
-    </div>
-    
-    <div class="form-row">
-        <label for="supplier-status">Status</label>
-        <div class="status-wrapper">
-            <input type="checkbox" id="supplier-status" name="supplier-status" checked>
-            <span>Active</span>
-        </div>
+    <!-- Supplier Management Section -->
+    <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
+    <div class="container hidden" id="supplierManagementSection">
+        <h2>Supplier Management</h2>
+        <!-- Supplier management content here -->
     </div>
 
-    <div class="form-row">
-        <label for="service-type">Service Type</label>
-        <select id="service-type">
-            <option value="bank-express">Bank Transfer (Express)</option>
-            <option value="bank-saver">Bank Transfer (Saver)</option>
-            <option value="enterprise">Enterprise to Enterprise</option>
-            <option value="usd-transfer">Bank Transfer (USD)</option>
-            <option value="alipay">Alipay Transfer</option>
-        </select>
+    <!-- Popup Container -->
+    <div id="popup-container"></div>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Processing image... This may take a few minutes.</div>
     </div>
 
-    <div class="form-row">
-        <label>Amount Limits</label>
-        <div id="amount-limits-section"></div>
-    </div>
-    <button class="btn" id="add-amount-range-btn">Add Amount Range</button>
-
-    <div class="form-row">
-        <label>Service Charges</label>
-        <div id="service-charge-section"></div>
-    </div>
-    <button class="btn" id="add-service-charge-btn">Add Service Charge</button>
-
-    <h3>Additional Questions</h3>
-    <div id="additional-questions-container"></div>
-
-    <button class="btn" id="add-supplier-btn">Add Supplier</button>
-
-    <h3>Supplier Information</h3>
-    <button id="sync-suppliers-btn" class="btn">Sync Suppliers to Google Sheet</button>
-    <button id="fetch-suppliers-btn" class="btn">Fetch Suppliers from Google Sheets</button>
-    
-    <div class="tabs" id="service-tabs">
-        <div class="tab" data-service="bank-express">Bank Transfer (Express)</div>
-        <div class="tab" data-service="bank-saver">Bank Transfer (Saver)</div>
-        <div class="tab" data-service="enterprise">Enterprise to Enterprise</div>
-        <div class="tab" data-service="usd-transfer">Bank Transfer (USD)</div>
-        <div class="tab" data-service="alipay">Alipay Transfer</div>
-    </div>
-
-    <!-- Tab Content Container -->
-    <div id="tab-content-container">
-        <!-- Bank Express Tab -->
-        <div class="tab-content" id="bank-express-tab">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount Limits</th>
-                        <th>Service Charges</th>
-                        <th>Additional Questions</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="bank-express-table-body"></tbody>
-            </table>
-        </div>
-
-        <!-- Bank Saver Tab -->
-        <div class="tab-content" id="bank-saver-tab">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount Limits</th>
-                        <th>Service Charges</th>
-                        <th>Additional Questions</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="bank-saver-table-body"></tbody>
-            </table>
-        </div>
-
-        <!-- Enterprise Tab -->
-        <div class="tab-content" id="enterprise-tab">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount Limits</th>
-                        <th>Service Charges</th>
-                        <th>Additional Questions</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="enterprise-table-body"></tbody>
-            </table>
-        </div>
-
-        <!-- USD Transfer Tab -->
-        <div class="tab-content" id="usd-transfer-tab">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount Limits</th>
-                        <th>Service Charges</th>
-                        <th>Additional Questions</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="usd-transfer-table-body"></tbody>
-            </table>
-        </div>
-
-        <!-- Alipay Tab -->
-        <div class="tab-content" id="alipay-tab">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount Limits</th>
-                        <th>Service Charges</th>
-                        <th>Additional Questions</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="alipay-table-body"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<!-- Loading Indicator -->
-<div id="loading-indicator">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Processing image... This may take a few minutes.</div>
-</div>
-
-<!-- Scripts -->
- <script src="shared-utilities.js"></script>
+    <!-- Scripts -->
+    <script src="shared-utilities.js"></script>
     <script src="suppliers-state.js"></script>
     <script src="ui-controls.js"></script>
     <script src="order-image-processor.js"></script>
@@ -525,6 +388,6 @@ input[type="checkbox"] {
     <script src="supplier-display.js"></script>
     <script src="daily-rates.js"></script>
     <script src="calculator.js"></script>
-    <script src="main.js"></script> 
+    <script src="main.js"></script>
 </body>
 </html>
