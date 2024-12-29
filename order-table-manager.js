@@ -204,7 +204,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
             ],
-            'Enterprise to Enterprise': [], // Add if you have specific questions
             'Alipay Transfer': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
                 { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
