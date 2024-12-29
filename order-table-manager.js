@@ -59,8 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td>
                         <input type="text" class="ref-edit" value="${order.referenceNumber}" placeholder="Reference Number"><br>
-                        <input type="text" class="mark-edit" value="${order.markingNumber}" placeholder="Marking Number"><br>
-                        <input type="text" class="customer-edit" value="${order.customerName}" placeholder="Customer Name">
+                        <input type="text" class="mark-edit" value="${order.markingNumber}" placeholder="Marking Number">
                     </td>
                     <td>
                         ${order.additionalQuestions.map(q => `
@@ -83,8 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${order.orderAmount.toFixed(2)} CNY</td>
                     <td>
                         Ref: ${order.referenceNumber}<br>
-                        Mark: ${order.markingNumber}<br>
-                        Customer: ${order.customerName}
+                        Mark: ${order.markingNumber}
                     </td>
                     <td>
                         ${order.additionalQuestions.map(q => `${q.label}: ${q.value}`).join('<br>')}
@@ -132,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 orderAmount: parseFloat(row.querySelector('.order-amount-edit').value),
                 referenceNumber: row.querySelector('.ref-edit').value,
                 markingNumber: row.querySelector('.mark-edit').value,
-                customerName: row.querySelector('.customer-edit').value,
                 additionalQuestions: Array.from(row.querySelectorAll('.additional-question-edit')).map(input => ({
                     label: input.previousElementSibling.textContent.trim(),
                     value: input.value
