@@ -20,11 +20,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await worker.recognize(file);
             console.log('OCR Raw Result:', result.data.text);
 
-            // Clean the OCR output
-            const cleanedText = cleanOCRText(result.data.text);
-
             // Parse the text
-            const orders = parseOrderText(cleanedText);
+            const orders = parseOrderText(result.data.text);
             console.log('Parsed orders:', orders);
 
             // Filter out 1688-related orders
@@ -45,14 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function cleanOCRText(text) {
-        // Remove special characters and extra spaces
-        return text
-            .replace(/[^\w\s.,-]/g, '') // Remove unwanted characters
-            .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
-            .trim(); // Remove leading/trailing spaces
-    }
-
     function parseOrderText(text) {
         const lines = text.split('\n')
             .map(line => line.trim())
@@ -61,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return lines.map(line => {
             try {
                 // Use a more flexible regex to extract fields
-                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+)\s+MYR\s+([\d,.]+)\s+([\w\s]+)\s+CNY\s+([\d,.]+)\s+(.+)/;
+                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+[\s\w]*)\s+MYR\s+([\d,.]+)\s+([\w\s]+)\s+CNY\s+([\d,.]+)\s+(.+)/;
                 const match = line.match(regex);
 
                 if (!match) {
@@ -72,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const order = {
                     date: match[1],
                     referenceNumber: match[2],
-                    paymentMethod: match[3],
+                    paymentMethod: match[3].trim(),
                     paymentAmount: extractAmount(match[4], 'MYR'),
                     markingNumber: match[5].trim(),
                     orderAmount: extractAmount(match[6], 'CNY'),
@@ -96,7 +85,9 @@ document.addEventListener('DOMContentLoaded', function () {
             'BANK TRANSFER (SAVER)': 'Bank Transfer (Saver)',
             'BANK TRANSFER (EXPRESS)': 'Bank Transfer (Express)',
             'ALIPAY TRANSFER': 'Alipay Transfer',
-            'ENTERPRISE TO ENTERPRISE': 'Enterprise to Enterprise'
+            'ENTERPRISE TO ENTERPRISE': 'Enterprise to Enterprise',
+            '1688 PAYMENT': '1688 Payment', // Add if needed
+            'VIP': 'VIP' // Add if needed
         };
 
         for (const [key, value] of Object.entries(serviceTypeMap)) {
@@ -119,7 +110,8 @@ document.addEventListener('DOMContentLoaded', function () {
             order &&
             order.orderAmount > 0 &&
             order.serviceType !== 'Unknown' &&
-            !order.serviceType.includes('1688')
+            !order.serviceType.includes('1688') &&
+            !order.serviceType.includes('VIP')
         );
 
         console.log('Order validation:', { order, isValid });
