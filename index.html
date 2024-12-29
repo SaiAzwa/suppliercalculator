@@ -7,7 +7,7 @@
     <!-- Add Tesseract.js CDN -->
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js'></script>
     <style>
-        :root {
+           :root {
             --primary-color: #007BFF;
             --secondary-color: #10b981;
             --bg-color: #f3f4f6;
@@ -288,6 +288,27 @@
             cursor: pointer;
             font-weight: bold;
         }
+        .button-container {
+            display: flex; /* Use flexbox to align buttons side by side */
+            gap: 10px; /* Add space between the buttons */
+            margin: 15px 0; /* Add margin for spacing */
+        }
+
+        .btn.toggle-btn {
+            flex: 1; /* Make buttons take equal width */
+            padding: 10px 24px;
+            font-weight: 600;
+            background-color: var(--secondary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn.toggle-btn:hover {
+            background-color: #059669;
+        }
     </style>
 </head>
 <body>
@@ -360,13 +381,14 @@
         </table>
     </div>
     
-    <button class="btn toggle-btn" id="DailyRatesBtn">Update Daily Rates</button>
-    <h3>Daily Rate</h3>
+    <!-- Buttons for Daily Rates and Supplier Management -->
+    <div class="button-container">
+        <button class="btn toggle-btn" id="DailyRatesBtn">Update Daily Rates</button>
+        <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
+    </div>
     <div id="daily-rate-section"></div>
 
-   <!-- Supplier Management Section -->
-    <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
-
+    <!-- Supplier Management Section -->
     <div class="container hidden" id="supplierManagementSection">
         <h2>Supplier Management</h2>
         <h3>Add/Edit Supplier</h3>
