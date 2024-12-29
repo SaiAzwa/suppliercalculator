@@ -33,8 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Filter out 1688-related orders
             const filteredOrders = orders.filter(order => 
                 !order.serviceType.includes('1688') && 
-                !order.serviceType.includes('VIP') &&
-                !order.serviceType.includes('1688 PAYMENT')
+                !order.serviceType.includes('VIP')
             );
 
             await worker.terminate();
@@ -55,8 +54,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return lines.map(line => {
             try {
-                // Use a more flexible regex to extract fields
-                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+[\s\w]*)\s+MYR\s+([\d,.]+)\s+([\w\s]+)\s+CNY\s+([\d,.]+)\s+(.+)/;
+                // Updated regex to handle variations in the text format
+                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+[\s\w]*)\s+MYR\s+([\d,.]+)\s+([\w\s]+)\s+CNY\s+([\d,.]+)\s+(.+)/i;
                 const match = line.match(regex);
 
                 if (!match) {
@@ -112,16 +111,42 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function isValidOrder(order) {
-        const isValid = (
-            order &&
+        if (!order) {
+            console.log('Invalid order: Order object is null or undefined');
+            return false;
+        }
+
+        const hasRequiredFields = (
             order.orderAmount > 0 &&
-            order.serviceType !== 'Unknown' &&
-            !order.serviceType.includes('1688') &&
-            !order.serviceType.includes('VIP')
+            order.serviceType &&
+            order.referenceNumber &&
+            order.markingNumber
         );
 
-        console.log('Order validation:', { order, isValid });
-        return isValid;
+        if (!hasRequiredFields) {
+            console.log('Invalid order: Missing required fields', {
+                orderAmount: order.orderAmount,
+                serviceType: order.serviceType,
+                referenceNumber: order.referenceNumber,
+                markingNumber: order.markingNumber
+            });
+            return false;
+        }
+
+        const isInvalidService = (
+            order.serviceType.includes('1688') ||
+            order.serviceType.includes('VIP')
+        );
+
+        if (isInvalidService) {
+            console.log('Invalid order: 1688 or VIP service type', {
+                serviceType: order.serviceType
+            });
+            return false;
+        }
+
+        console.log('Valid order:', order);
+        return true;
     }
 
     // Setup drag and drop functionality
