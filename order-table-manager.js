@@ -36,8 +36,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         showAdditionalQuestionsPopup: function(index) {
+            console.log('showAdditionalQuestionsPopup called with index:', index); // Debugging
             const order = window.orderProcessor.processedOrders[index];
-            if (!order) return;
+            if (!order) {
+                console.error('Order not found for index:', index); // Debugging
+                return;
+            }
 
             // Create the popup
             const popup = document.createElement('div');
@@ -53,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Add the popup to the body
             document.body.appendChild(popup);
+            console.log('Popup added to the DOM'); // Debugging
 
             // Populate the additional questions form based on the service type
             const form = popup.querySelector('#additional-questions-form');
