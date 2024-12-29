@@ -100,17 +100,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <option value="Enterprise to Enterprise" ${order.serviceType === 'Enterprise to Enterprise' ? 'selected' : ''}>Enterprise to Enterprise</option>
                 </select>
                 <label for="orderAmount">Order Amount:</label>
-                <input type="number" id="orderAmount" class="form-control" value="${order.orderAmount}" step="0.01" min="0.01">
+                <input type="number" id="orderAmount" class="form-control" value="${order.orderAmount}" step="0.01" min="0">
                 <label for="referenceNumber">Reference Number:</label>
                 <input type="text" id="referenceNumber" class="form-control" value="${order.referenceNumber}">
                 <label for="markingNumber">Marking Number:</label>
                 <input type="text" id="markingNumber" class="form-control" value="${order.markingNumber}">
-                ${order.additionalQuestions.map(q => `
-                    <div>
-                        <label>${q.label}</label>
-                        <input type="text" class="form-control additional-question-edit" value="${q.value}" placeholder="${q.label}">
-                    </div>
-                `).join('')}
+                <!-- Additional Questions -->
+                ${getAdditionalQuestionsHTML(order.serviceType, order.additionalQuestions)}
                 <button class="btn btn-primary" id="saveButton">Save</button>
                 <button class="btn btn-secondary" id="cancelButton">Cancel</button>
             </div>
@@ -127,10 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     orderAmount: parseFloat(document.getElementById('orderAmount').value),
                     referenceNumber: document.getElementById('referenceNumber').value,
                     markingNumber: document.getElementById('markingNumber').value,
-                    additionalQuestions: Array.from(document.querySelectorAll('.additional-question-edit')).map(input => ({
-                        label: input.previousElementSibling.textContent.trim(),
-                        value: input.value
-                    })),
+                    additionalQuestions: getAdditionalQuestionsFromPopup(order.serviceType),
                     requiresAdditionalQuestions: false // Clear the "!" after saving
                 };
 
@@ -169,6 +162,50 @@ document.addEventListener('DOMContentLoaded', function () {
             throw new Error('Reference number is required');
         }
         return true;
+    }
+
+    // Helper function to get additional questions HTML based on service type
+    function getAdditionalQuestionsHTML(serviceType, existingQuestions = []) {
+        const questions = getQuestionsForServiceType(serviceType);
+        return questions.map(q => `
+            <div>
+                <label>${q.label}</label>
+                <input type="text" class="form-control additional-question-edit" value="${existingQuestions.find(eq => eq.label === q.label)?.value || ''}" placeholder="${q.label}">
+            </div>
+        `).join('');
+    }
+
+    // Helper function to get additional questions from the pop-up
+    function getAdditionalQuestionsFromPopup(serviceType) {
+        const questions = getQuestionsForServiceType(serviceType);
+        return questions.map(q => ({
+            label: q.label,
+            value: document.querySelector(`.additional-question-edit[placeholder="${q.label}"]`)?.value || ''
+        }));
+    }
+
+    // Helper function to get questions for a specific service type
+    function getQuestionsForServiceType(serviceType) {
+        // Define additional questions for each service type
+        const questionsMap = {
+            'Bank Transfer (Saver)': [
+                { label: 'Bank Name', required: true },
+                { label: 'Account Number', required: true }
+            ],
+            'Bank Transfer (Express)': [
+                { label: 'Bank Name', required: true },
+                { label: 'Account Number', required: true },
+                { label: 'Swift Code', required: true }
+            ],
+            'Alipay Transfer': [
+                { label: 'Alipay Account', required: true }
+            ],
+            'Enterprise to Enterprise': [
+                { label: 'Company Name', required: true },
+                { label: 'Tax ID', required: true }
+            ]
+        };
+        return questionsMap[serviceType] || [];
     }
 
     // Initialize functionality
