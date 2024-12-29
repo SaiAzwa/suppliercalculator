@@ -25,3 +25,9 @@ window.sharedUtils = {
         }, 3000);
     }
 };
+
+// Initialize shared state
+window.orderProcessor = {
+    processedOrders: [], // Store processed orders
+    onOrdersProcessed: null // Callback for when orders are processed
+};
