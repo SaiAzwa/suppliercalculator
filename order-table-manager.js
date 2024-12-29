@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </div>
             <button class="btn" id="clear-orders-btn">Clear All Orders</button>
-            <button class="btn" id="add-manual-order-btn">Add Manual Order</button>
         `;
 
         const orderTable = document.getElementById('orderTable');
@@ -35,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listeners
         document.getElementById('service-filter')?.addEventListener('change', filterOrders);
         document.getElementById('clear-orders-btn')?.addEventListener('click', clearOrders);
-        document.getElementById('add-manual-order-btn')?.addEventListener('click', addManualOrder);
     }
 
     function updateOrderTable(orders) {
@@ -64,6 +62,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="text" class="mark-edit" value="${order.markingNumber}" placeholder="Marking Number"><br>
                         <input type="text" class="customer-edit" value="${order.customerName}" placeholder="Customer Name">
                     </td>
+                    <td>
+                        ${order.additionalQuestions.map(q => `
+                            <div>
+                                <label>${q.label}</label>
+                                <input type="text" class="additional-question-edit" value="${q.value}" placeholder="${q.label}">
+                            </div>
+                        `).join('')}
+                    </td>
                     <td class="best-supplier">Calculating...</td>
                     <td>
                         <button class="btn save-btn" onclick="saveOrder(${index})">Save</button>
@@ -80,6 +86,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         Mark: ${order.markingNumber}<br>
                         Customer: ${order.customerName}
                     </td>
+                    <td>
+                        ${order.additionalQuestions.map(q => `${q.label}: ${q.value}`).join('<br>')}
+                    </td>
                     <td class="best-supplier">Calculating...</td>
                     <td>
                         <button class="btn edit-btn" onclick="editOrder(${index})">Edit</button>
@@ -91,36 +100,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function addManualOrder() {
-        const newOrder = {
-            date: new Date().toISOString().split('T')[0],
-            referenceNumber: '',
-            paymentMethod: '',
-            paymentAmount: 0,
-            markingNumber: '',
-            orderAmount: 0,
-            serviceType: '',
-            timeSinceOrder: 'just now',
-            accountType: '',
-            customerName: '',
-            isEditing: true
-        };
-        window.orderProcessor.processedOrders.unshift(newOrder);
-        updateOrderTable(window.orderProcessor.processedOrders);
-        showNotification('New order ready for editing', 'info');
+    function filterOrders() {
+        const serviceType = document.getElementById('service-filter')?.value;
+        const filteredOrders = serviceType ? 
+            window.orderProcessor.processedOrders.filter(order => order.serviceType === serviceType) : 
+            window.orderProcessor.processedOrders;
+        
+        updateOrderTable(filteredOrders);
     }
 
-    function validateOrder(orderData) {
-        if (!orderData.serviceType) {
-            throw new Error('Service type is required');
+    function clearOrders() {
+        if (confirm('Are you sure you want to clear all orders?')) {
+            window.orderProcessor.processedOrders = [];
+            updateOrderTable([]);
+            window.sharedUtils.showNotification('All orders cleared', 'info');
         }
-        if (!orderData.orderAmount || orderData.orderAmount <= 0) {
-            throw new Error('Valid order amount is required');
-        }
-        if (!orderData.referenceNumber) {
-            throw new Error('Reference number is required');
-        }
-        return true;
     }
 
     // Order manipulation functions
@@ -139,15 +133,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 referenceNumber: row.querySelector('.ref-edit').value,
                 markingNumber: row.querySelector('.mark-edit').value,
                 customerName: row.querySelector('.customer-edit').value,
+                additionalQuestions: Array.from(row.querySelectorAll('.additional-question-edit')).map(input => ({
+                    label: input.previousElementSibling.textContent.trim(),
+                    value: input.value
+                })),
                 isEditing: false
             };
 
             validateOrder(updatedOrder);
             window.orderProcessor.processedOrders[index] = updatedOrder;
             updateOrderTable(window.orderProcessor.processedOrders);
-            showNotification('Order updated successfully', 'success');
+            window.sharedUtils.showNotification('Order updated successfully', 'success');
         } catch (error) {
-            showNotification(error.message, 'error');
+            window.sharedUtils.showNotification(error.message, 'error');
         }
     }
 
@@ -160,25 +158,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirm('Are you sure you want to delete this order?')) {
             window.orderProcessor.processedOrders.splice(index, 1);
             updateOrderTable(window.orderProcessor.processedOrders);
-            showNotification('Order deleted successfully', 'success');
+            window.sharedUtils.showNotification('Order deleted successfully', 'success');
         }
     }
 
-    function filterOrders() {
-        const serviceType = document.getElementById('service-filter')?.value;
-        const filteredOrders = serviceType ? 
-            window.orderProcessor.processedOrders.filter(order => order.serviceType === serviceType) : 
-            window.orderProcessor.processedOrders;
-        
-        updateOrderTable(filteredOrders);
-    }
-
-    function clearOrders() {
-        if (confirm('Are you sure you want to clear all orders?')) {
-            window.orderProcessor.processedOrders = [];
-            updateOrderTable([]);
-            showNotification('All orders cleared', 'info');
+    function validateOrder(orderData) {
+        if (!orderData.serviceType) {
+            throw new Error('Service type is required');
         }
+        if (!orderData.orderAmount || orderData.orderAmount <= 0) {
+            throw new Error('Valid order amount is required');
+        }
+        if (!orderData.referenceNumber) {
+            throw new Error('Reference number is required');
+        }
+        return true;
     }
 
     // Initialize functionality
@@ -193,7 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteOrder,
         filterOrders,
         clearOrders,
-        updateOrderTable,
-        addManualOrder
+        updateOrderTable
     };
 });
