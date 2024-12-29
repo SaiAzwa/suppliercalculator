@@ -7,6 +7,66 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const suppliers = window.suppliersState;
 
+    // Function to load rates from localStorage
+    function loadRatesFromLocalStorage() {
+        const savedRates = JSON.parse(localStorage.getItem('dailyRates')) || {};
+        suppliers.data.forEach(supplier => {
+            if (!supplier || !supplier.services) return;
+
+            supplier.services.forEach(service => {
+                if (!service || !service.serviceType || !Array.isArray(service.amountLimits)) return;
+
+                service.amountLimits.forEach(limit => {
+                    if (!limit) return;
+
+                    const key = `${supplier.name}-${service.serviceType}-${limit.limit}`;
+                    if (savedRates[key]) {
+                        limit.rate = savedRates[key];
+                    }
+                });
+            });
+        });
+    }
+
+    // Function to save rates to localStorage
+    function saveRatesToLocalStorage() {
+        const savedRates = {};
+        suppliers.data.forEach(supplier => {
+            if (!supplier || !supplier.services) return;
+
+            supplier.services.forEach(service => {
+                if (!service || !service.serviceType || !Array.isArray(service.amountLimits)) return;
+
+                service.amountLimits.forEach(limit => {
+                    if (!limit) return;
+
+                    const key = `${supplier.name}-${service.serviceType}-${limit.limit}`;
+                    savedRates[key] = limit.rate;
+                });
+            });
+        });
+        localStorage.setItem('dailyRates', JSON.stringify(savedRates));
+    }
+
+    // Function to clear rates from localStorage and reset inputs
+    function clearRates() {
+        localStorage.removeItem('dailyRates');
+        suppliers.data.forEach(supplier => {
+            if (!supplier || !supplier.services) return;
+
+            supplier.services.forEach(service => {
+                if (!service || !service.serviceType || !Array.isArray(service.amountLimits)) return;
+
+                service.amountLimits.forEach(limit => {
+                    if (!limit) return;
+                    limit.rate = null; // Reset the rate to null
+                });
+            });
+        });
+        updateDailyRateSection(); // Refresh the UI
+        showNotification('Daily rates cleared', 'success');
+    }
+
     function updateDailyRateSection() {
         const dailyRateSection = document.getElementById('daily-rate-section');
         if (!dailyRateSection) {
@@ -61,6 +121,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
         });
+
+        // Add Save and Clear buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.marginTop = '20px';
+
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Save Rates';
+        saveButton.style.marginRight = '10px';
+        saveButton.addEventListener('click', saveDailyRates);
+
+        const clearButton = document.createElement('button');
+        clearButton.textContent = 'Clear Rates';
+        clearButton.addEventListener('click', clearRates);
+
+        buttonContainer.appendChild(saveButton);
+        buttonContainer.appendChild(clearButton);
+        dailyRateSection.appendChild(buttonContainer);
     }
 
     function saveDailyRates() {
@@ -98,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (hasChanges) {
             try {
-                suppliers.save();
+                saveRatesToLocalStorage();
                 showNotification('Daily rates saved successfully', 'success');
             } catch (error) {
                 console.error('Error saving daily rates:', error);
@@ -107,16 +184,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Load rates from localStorage on page load
+    loadRatesFromLocalStorage();
+
     // Update daily rate section on load
     updateDailyRateSection();
-
-    // Add event listener to save rates when necessary
-    const dailyRateSection = document.getElementById('daily-rate-section');
-    if (dailyRateSection) {
-        dailyRateSection.addEventListener('input', () => {
-            saveDailyRates();
-        });
-    }
 
     // Listen for supplier updates
     window.addEventListener('suppliersUpdated', function() {
