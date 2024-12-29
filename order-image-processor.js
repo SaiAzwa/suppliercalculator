@@ -54,8 +54,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return lines.map(line => {
             try {
-                // Updated regex to handle variations in the text format
-                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+[\s\w]*)\s+MYR\s+([\d,.]+)\s+([\w\s]+)\s+CNY\s+([\d,.]+)\s+(.+)/i;
+                // Updated regex to match the specific format
+                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+[\s\w]*)\s+MYR\s+([\d,.]+)\s+([\w\d]+)\s+CNY\s+([\d,.]+)/i;
                 const match = line.match(regex);
 
                 if (!match) {
@@ -64,17 +64,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const order = {
-                    date: match[1],
                     referenceNumber: match[2],
-                    paymentMethod: match[3].trim(),
-                    paymentAmount: extractAmount(match[4], 'MYR'),
-                    markingNumber: match[5].trim(),
-                    orderAmount: extractAmount(match[6], 'CNY'),
-                    serviceType: extractServiceType(match[7]),
-                    timeSinceOrder: 'N/A', // Not in the image
-                    accountType: 'N/A', // Not in the image
-                    additionalQuestions: [], // Will be added manually
-                    requiresAdditionalQuestions: true // Mark for manual input
+                    markingNumber: match[5],
+                    orderAmount: parseFloat(match[6].replace(',', '')),
+                    serviceType: extractServiceType(match[3]),
+                    accountType: 'Company' // Default to Company, can be updated if needed
                 };
 
                 return isValidOrder(order) ? order : null;
@@ -85,29 +79,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }).filter(order => order !== null);
     }
 
-    function extractServiceType(text) {
+    function extractServiceType(paymentMethod) {
         const serviceTypeMap = {
-            'BANK TRANSFER (SAVER)': 'Bank Transfer (Saver)',
-            'BANK TRANSFER (EXPRESS)': 'Bank Transfer (Express)',
-            'ALIPAY TRANSFER': 'Alipay Transfer',
-            'ENTERPRISE TO ENTERPRISE': 'Enterprise to Enterprise',
-            '1688 PAYMENT': '1688 Payment', // Add if needed
-            'VIP': 'VIP' // Add if needed
+            'wallet': 'Alipay Transfer',
+            'payment_gateway': 'Bank Transfer (Express)',
+            'cash': 'Bank Transfer (Saver)'
         };
 
-        for (const [key, value] of Object.entries(serviceTypeMap)) {
-            if (text.includes(key)) return value;
-        }
-        return 'Unknown';
-    }
-
-    function extractAmount(amountStr, currency) {
-        try {
-            const cleanAmount = amountStr.replace(currency, '').replace(',', '');
-            return parseFloat(cleanAmount) || 0;
-        } catch {
-            return 0;
-        }
+        return serviceTypeMap[paymentMethod.toLowerCase()] || 'Unknown';
     }
 
     function isValidOrder(order) {
@@ -117,18 +96,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const hasRequiredFields = (
-            order.orderAmount > 0 &&
-            order.serviceType &&
             order.referenceNumber &&
-            order.markingNumber
+            order.markingNumber &&
+            order.orderAmount > 0 &&
+            order.serviceType
         );
 
         if (!hasRequiredFields) {
             console.log('Invalid order: Missing required fields', {
-                orderAmount: order.orderAmount,
-                serviceType: order.serviceType,
                 referenceNumber: order.referenceNumber,
-                markingNumber: order.markingNumber
+                markingNumber: order.markingNumber,
+                orderAmount: order.orderAmount,
+                serviceType: order.serviceType
             });
             return false;
         }
