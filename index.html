@@ -285,7 +285,7 @@
 
     .btn.toggle-btn {
     flex: 1;
-    padding: 10px 24px;
+    padding: 10px 12px;
     font-weight: 600;
     background-color: var(--secondary-color);
     color: #ffffff;
@@ -375,8 +375,11 @@
         <button class="btn toggle-btn" id="DailyRatesBtn">Update Daily Rates</button>
         <button class="btn toggle-btn" id="toggleManagementBtn">Show Supplier Management</button>
     </div>
-    <div id="daily-rate-section"></div>
-
+    <div class="container hidden" id="dailyratesection">
+        <h2>Daily Rates</h2>
+        <div id="daily-rate-section"></div>
+    </div>
+    
     <!-- Supplier Management Section -->
     <div class="container hidden" id="supplierManagementSection">
         <h2>Supplier Management</h2>
