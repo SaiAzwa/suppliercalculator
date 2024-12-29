@@ -1,16 +1,4 @@
-// Initialize shared state
-window.orderProcessor = {
-    processedOrders: [], // Store processed orders
-    onOrdersProcessed: null, // Callback for when orders are processed
-};
-
-// Declare functions that need to be globally accessible
-let processFile;
-let showLoadingIndicator;
-let hideLoadingIndicator;
-let updateLoadingText;
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     async function initializeWorker() {
         const worker = await Tesseract.createWorker({
             logger: m => {
@@ -32,8 +20,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await worker.recognize(file);
             console.log('OCR Raw Result:', result.data.text);
 
+            // Clean the OCR output
+            const cleanedText = cleanOCRText(result.data.text);
+
             // Parse the text
-            const orders = parseOrderText(result.data.text);
+            const orders = parseOrderText(cleanedText);
             console.log('Parsed orders:', orders);
 
             // Filter out 1688-related orders
@@ -54,6 +45,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function cleanOCRText(text) {
+        // Remove special characters and extra spaces
+        return text
+            .replace(/[^\w\s.,-]/g, '') // Remove unwanted characters
+            .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+            .trim(); // Remove leading/trailing spaces
+    }
+
     function parseOrderText(text) {
         const lines = text.split('\n')
             .map(line => line.trim())
@@ -61,8 +60,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return lines.map(line => {
             try {
-                // Use regex to extract fields
-                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+)\s+MYR\s+([\d,.]+)\s+(\w+)\s+CNY\s+([\d,.]+)\s+(.+)/;
+                // Use a more flexible regex to extract fields
+                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+)\s+MYR\s+([\d,.]+)\s+([\w\s]+)\s+CNY\s+([\d,.]+)\s+(.+)/;
                 const match = line.match(regex);
 
                 if (!match) {
@@ -75,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     referenceNumber: match[2],
                     paymentMethod: match[3],
                     paymentAmount: extractAmount(match[4], 'MYR'),
-                    markingNumber: match[5],
+                    markingNumber: match[5].trim(),
                     orderAmount: extractAmount(match[6], 'CNY'),
                     serviceType: extractServiceType(match[7]),
                     timeSinceOrder: 'N/A', // Not in the image
@@ -244,8 +243,3 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize drag and drop
     setupDragAndDrop();
 });
-
-// Expose necessary functions globally
-window.orderProcessor.processFile = processFile;
-window.orderProcessor.showLoadingIndicator = showLoadingIndicator;
-window.orderProcessor.hideLoadingIndicator = hideLoadingIndicator;
