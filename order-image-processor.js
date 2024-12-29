@@ -59,17 +59,16 @@ document.addEventListener('DOMContentLoaded', function() {
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
-        console.log('Processing lines:', lines);
-
         return lines.map(line => {
             try {
-                const parts = line.match(/\S+/g) || [];
-                console.log('Line parts:', parts);
-                
+                const parts = line.split(/\s+/); // Split by whitespace
                 if (parts.length < 10) {
                     console.log('Skipping line - insufficient parts:', line);
                     return null;
                 }
+
+                const customerName = parts[parts.length - 1];
+                const accountType = inferAccountType(customerName);
 
                 const order = {
                     date: parts[0],
@@ -78,15 +77,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     paymentAmount: extractAmount(parts[3], 'MYR'),
                     markingNumber: parts[4],
                     orderAmount: extractAmount(parts[5], 'CNY'),
-                    serviceType: extractServiceType(parts.slice(6)),
+                    serviceType: extractServiceType(parts.slice(6, -3).join(' ')),
                     timeSinceOrder: parts[parts.length - 3],
-                    accountType: parts[parts.length - 2],
-                    customerName: parts[parts.length - 1]
+                    accountType: accountType,
+                    customerName: customerName,
+                    additionalQuestions: inferAdditionalQuestions(customerName, accountType)
                 };
 
-                console.log('Parsed order:', order);
                 return isValidOrder(order) ? order : null;
-
             } catch (error) {
                 console.error('Error parsing line:', line, error);
                 return null;
@@ -94,7 +92,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }).filter(order => order !== null);
     }
 
-    function extractServiceType(parts) {
+    function inferAccountType(customerName) {
+        const companyKeywords = ['Co.', 'Ltd.', 'Inc.', 'Company', '店', '有限公司'];
+        const isCompanyAccount = companyKeywords.some(keyword => customerName.includes(keyword));
+        return isCompanyAccount ? 'Company' : 'Personal';
+    }
+
+    function inferAdditionalQuestions(customerName, accountType) {
+        const additionalQuestions = [];
+
+        // Check if the customer name contains non-Latin characters (assume Chinese account)
+        const isChineseAccount = /[^\x00-\x7F]/.test(customerName);
+        const isEnglishAccount = !isChineseAccount;
+
+        if (isEnglishAccount) {
+            additionalQuestions.push({ label: 'English Account', value: 'Yes' });
+        } else {
+            additionalQuestions.push({ label: 'English Account', value: 'No' });
+        }
+
+        // Add account type question
+        additionalQuestions.push({ label: 'Account Type', value: accountType });
+
+        // Add bank-specific questions if needed
+        if (customerName.includes('OCB')) {
+            additionalQuestions.push({ label: 'Is the bank OCB?', value: 'Yes' });
+        } else {
+            additionalQuestions.push({ label: 'Is the bank OCB?', value: 'No' });
+        }
+
+        return additionalQuestions;
+    }
+
+    function extractServiceType(text) {
         const serviceTypeMap = {
             'BANK TRANSFER (SAVER)': 'Bank Transfer (Saver)',
             'BANK TRANSFER (EXPRESS)': 'Bank Transfer (Express)',
@@ -102,9 +132,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'ENTERPRISE TO ENTERPRISE': 'Enterprise to Enterprise'
         };
 
-        const fullText = parts.join(' ');
         for (const [key, value] of Object.entries(serviceTypeMap)) {
-            if (fullText.includes(key)) return value;
+            if (text.includes(key)) return value;
         }
         return 'Unknown';
     }
