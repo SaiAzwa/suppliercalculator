@@ -61,27 +61,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return lines.map(line => {
             try {
-                const parts = line.split(/\s+/); // Split by whitespace
-                if (parts.length < 10) {
-                    console.log('Skipping line - insufficient parts:', line);
+                // Use regex to extract fields
+                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+)\s+MYR\s+([\d,.]+)\s+(\w+)\s+CNY\s+([\d,.]+)\s+(.+)/;
+                const match = line.match(regex);
+
+                if (!match) {
+                    console.log('Skipping line - invalid format:', line);
                     return null;
                 }
 
-                const customerName = parts[parts.length - 1];
-                const accountType = inferAccountType(customerName);
-
                 const order = {
-                    date: parts[0],
-                    referenceNumber: parts[1],
-                    paymentMethod: parts[2],
-                    paymentAmount: extractAmount(parts[3], 'MYR'),
-                    markingNumber: parts[4],
-                    orderAmount: extractAmount(parts[5], 'CNY'),
-                    serviceType: extractServiceType(parts.slice(6, -3).join(' ')),
-                    timeSinceOrder: parts[parts.length - 3],
-                    accountType: accountType,
-                    customerName: customerName,
-                    additionalQuestions: inferAdditionalQuestions(customerName, accountType)
+                    date: match[1],
+                    referenceNumber: match[2],
+                    paymentMethod: match[3],
+                    paymentAmount: extractAmount(match[4], 'MYR'),
+                    markingNumber: match[5],
+                    orderAmount: extractAmount(match[6], 'CNY'),
+                    serviceType: extractServiceType(match[7]),
+                    timeSinceOrder: 'N/A', // Not in the image
+                    accountType: 'N/A', // Not in the image
+                    customerName: 'N/A', // Not in the image
+                    additionalQuestions: [], // Will be added manually
+                    requiresAdditionalQuestions: true // Mark for manual input
                 };
 
                 return isValidOrder(order) ? order : null;
@@ -90,38 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return null;
             }
         }).filter(order => order !== null);
-    }
-
-    function inferAccountType(customerName) {
-        const companyKeywords = ['Co.', 'Ltd.', 'Inc.', 'Company', '店', '有限公司'];
-        const isCompanyAccount = companyKeywords.some(keyword => customerName.includes(keyword));
-        return isCompanyAccount ? 'Company' : 'Personal';
-    }
-
-    function inferAdditionalQuestions(customerName, accountType) {
-        const additionalQuestions = [];
-
-        // Check if the customer name contains non-Latin characters (assume Chinese account)
-        const isChineseAccount = /[^\x00-\x7F]/.test(customerName);
-        const isEnglishAccount = !isChineseAccount;
-
-        if (isEnglishAccount) {
-            additionalQuestions.push({ label: 'English Account', value: 'Yes' });
-        } else {
-            additionalQuestions.push({ label: 'English Account', value: 'No' });
-        }
-
-        // Add account type question
-        additionalQuestions.push({ label: 'Account Type', value: accountType });
-
-        // Add bank-specific questions if needed
-        if (customerName.includes('OCB')) {
-            additionalQuestions.push({ label: 'Is the bank OCB?', value: 'Yes' });
-        } else {
-            additionalQuestions.push({ label: 'Is the bank OCB?', value: 'No' });
-        }
-
-        return additionalQuestions;
     }
 
     function extractServiceType(text) {
