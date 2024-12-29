@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM fully loaded'); // Debugging log
+
     // Check if suppliers state exists
     if (!window.suppliersState) {
         console.error('Suppliers state not initialized');
@@ -9,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to load rates from localStorage
     function loadRatesFromLocalStorage() {
+        console.log('Loading rates from localStorage'); // Debugging log
         const savedRates = JSON.parse(localStorage.getItem('dailyRates')) || {};
         suppliers.data.forEach(supplier => {
             if (!supplier || !supplier.services) return;
@@ -30,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to save rates to localStorage
     function saveRatesToLocalStorage() {
+        console.log('Saving rates to localStorage'); // Debugging log
         const savedRates = {};
         suppliers.data.forEach(supplier => {
             if (!supplier || !supplier.services) return;
@@ -50,6 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to clear rates from localStorage and reset inputs
     function clearRates() {
+        console.log('Clearing rates'); // Debugging log
         localStorage.removeItem('dailyRates');
         suppliers.data.forEach(supplier => {
             if (!supplier || !supplier.services) return;
@@ -69,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to update the daily rate section in the UI
     function updateDailyRateSection() {
+        console.log('Updating daily rate section'); // Debugging log
         const dailyRateSection = document.getElementById('daily-rate-section');
         if (!dailyRateSection) {
             console.error('Daily rate section element not found.');
@@ -155,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to save daily rates
     function saveDailyRates() {
+        console.log('Saving daily rates'); // Debugging log
         const rateInputs = document.querySelectorAll('#daily-rate-section input');
         if (!rateInputs || rateInputs.length === 0) {
             console.warn('No daily rates to save.');
@@ -206,8 +213,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const dailyRateContainer = document.getElementById('dailyratesection');
 
     if (dailyRatesBtn && dailyRateContainer) {
+        console.log('Button and container found'); // Debugging log
         // Toggle visibility when the button is clicked
         dailyRatesBtn.addEventListener('click', function () {
+            console.log('Button clicked'); // Debugging log
             if (dailyRateContainer.classList.contains('hidden')) {
                 dailyRateContainer.classList.remove('hidden');
                 updateDailyRateSection(); // Update the content when shown
