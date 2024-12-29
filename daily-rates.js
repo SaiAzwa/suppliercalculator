@@ -203,19 +203,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Add event listener to the "Update Daily Rates" button for toggle functionality
     const dailyRatesBtn = document.getElementById('DailyRatesBtn');
-    const dailyRateSection = document.getElementById('daily-rate-section');
+    const dailyRateContainer = document.getElementById('dailyratesection');
 
-    if (dailyRatesBtn && dailyRateSection) {
-        // Hide the daily rate section by default
-        dailyRateSection.style.display = 'none';
-
+    if (dailyRatesBtn && dailyRateContainer) {
         // Toggle visibility when the button is clicked
         dailyRatesBtn.addEventListener('click', function () {
-            if (dailyRateSection.style.display === 'none') {
-                dailyRateSection.style.display = 'block';
+            if (dailyRateContainer.classList.contains('hidden')) {
+                dailyRateContainer.classList.remove('hidden');
                 updateDailyRateSection(); // Update the content when shown
             } else {
-                dailyRateSection.style.display = 'none';
+                dailyRateContainer.classList.add('hidden');
             }
         });
     }
