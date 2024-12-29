@@ -1,10 +1,10 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize with the shared state
     const orders = window.orderProcessor.processedOrders;
     let editingOrderIndex = -1;
 
     // Set up callback for when new orders are processed
-    window.orderProcessor.onOrdersProcessed = function(updatedOrders) {
+    window.orderProcessor.onOrdersProcessed = function (updatedOrders) {
         updateOrderTable(updatedOrders);
     };
 
@@ -43,68 +43,33 @@ document.addEventListener('DOMContentLoaded', function() {
         orderTable.innerHTML = '';
         orders.forEach((order, index) => {
             const newRow = document.createElement('tr');
-            if (order.isEditing) {
-                // Editable row
-                newRow.innerHTML = `
-                    <td>
-                        <select class="service-type-edit">
-                            <option value="Bank Transfer (Saver)" ${order.serviceType === 'Bank Transfer (Saver)' ? 'selected' : ''}>Bank Transfer (Saver)</option>
-                            <option value="Bank Transfer (Express)" ${order.serviceType === 'Bank Transfer (Express)' ? 'selected' : ''}>Bank Transfer (Express)</option>
-                            <option value="Alipay Transfer" ${order.serviceType === 'Alipay Transfer' ? 'selected' : ''}>Alipay Transfer</option>
-                            <option value="Enterprise to Enterprise" ${order.serviceType === 'Enterprise to Enterprise' ? 'selected' : ''}>Enterprise to Enterprise</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" class="order-amount-edit" value="${order.orderAmount}" step="0.01" min="0.01">
-                    </td>
-                    <td>
-                        <input type="text" class="ref-edit" value="${order.referenceNumber}" placeholder="Reference Number"><br>
-                        <input type="text" class="mark-edit" value="${order.markingNumber}" placeholder="Marking Number">
-                    </td>
-                    <td>
-                        ${order.additionalQuestions.map(q => `
-                            <div>
-                                <label>${q.label}</label>
-                                <input type="text" class="additional-question-edit" value="${q.value}" placeholder="${q.label}">
-                            </div>
-                        `).join('')}
-                    </td>
-                    <td class="best-supplier">Calculating...</td>
-                    <td>
-                        <button class="btn save-btn" onclick="saveOrder(${index})">Save</button>
-                        <button class="btn cancel-btn" onclick="cancelEdit(${index})">Cancel</button>
-                    </td>
-                `;
-            } else {
-                // Display row
-                newRow.innerHTML = `
-                    <td>${order.serviceType}</td>
-                    <td>${order.orderAmount.toFixed(2)} CNY</td>
-                    <td>
-                        Ref: ${order.referenceNumber}<br>
-                        Mark: ${order.markingNumber}
-                    </td>
-                    <td>
-                        ${order.additionalQuestions.map(q => `${q.label}: ${q.value}`).join('<br>')}
-                    </td>
-                    <td class="best-supplier">Calculating...</td>
-                    <td>
-                        <button class="btn edit-btn" onclick="editOrder(${index})">Edit</button>
-                        <button class="btn delete-btn" onclick="deleteOrder(${index})">Delete</button>
-                        ${order.requiresAdditionalQuestions ? '<span class="warning">!</span>' : ''}
-                    </td>
-                `;
-            }
+            newRow.innerHTML = `
+                <td>${order.serviceType}</td>
+                <td>${order.orderAmount.toFixed(2)} CNY</td>
+                <td>
+                    Ref: ${order.referenceNumber}<br>
+                    Mark: ${order.markingNumber}
+                </td>
+                <td>
+                    ${order.additionalQuestions.map(q => `${q.label}: ${q.value}`).join('<br>')}
+                </td>
+                <td class="best-supplier">Calculating...</td>
+                <td>
+                    <button class="btn edit-btn" onclick="tableManager.editOrder(${index})">Edit</button>
+                    <button class="btn delete-btn" onclick="tableManager.deleteOrder(${index})">Delete</button>
+                    ${order.requiresAdditionalQuestions ? '<span class="warning">!</span>' : ''}
+                </td>
+            `;
             orderTable.appendChild(newRow);
         });
     }
 
     function filterOrders() {
         const serviceType = document.getElementById('service-filter')?.value;
-        const filteredOrders = serviceType ? 
-            window.orderProcessor.processedOrders.filter(order => order.serviceType === serviceType) : 
+        const filteredOrders = serviceType ?
+            window.orderProcessor.processedOrders.filter(order => order.serviceType === serviceType) :
             window.orderProcessor.processedOrders;
-        
+
         updateOrderTable(filteredOrders);
     }
 
@@ -118,39 +83,71 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Order manipulation functions
     function editOrder(index) {
-        window.orderProcessor.processedOrders[index].isEditing = true;
-        updateOrderTable(window.orderProcessor.processedOrders);
-    }
+        editingOrderIndex = index;
+        const order = window.orderProcessor.processedOrders[index];
 
-    function saveOrder(index) {
-        try {
-            const row = document.querySelector(`tr:nth-child(${index + 1})`);
-            const updatedOrder = {
-                ...window.orderProcessor.processedOrders[index],
-                serviceType: row.querySelector('.service-type-edit').value,
-                orderAmount: parseFloat(row.querySelector('.order-amount-edit').value),
-                referenceNumber: row.querySelector('.ref-edit').value,
-                markingNumber: row.querySelector('.mark-edit').value,
-                additionalQuestions: Array.from(row.querySelectorAll('.additional-question-edit')).map(input => ({
-                    label: input.previousElementSibling.textContent.trim(),
-                    value: input.value
-                })),
-                isEditing: false,
-                requiresAdditionalQuestions: false // Clear the "!" after saving
-            };
+        // Create a pop-up form
+        const popup = document.createElement('div');
+        popup.className = 'popup';
+        popup.innerHTML = `
+            <div class="popup-content">
+                <h2>Edit ${order.serviceType}</h2>
+                <label for="serviceType">Service Type:</label>
+                <select id="serviceType" class="form-control">
+                    <option value="Bank Transfer (Saver)" ${order.serviceType === 'Bank Transfer (Saver)' ? 'selected' : ''}>Bank Transfer (Saver)</option>
+                    <option value="Bank Transfer (Express)" ${order.serviceType === 'Bank Transfer (Express)' ? 'selected' : ''}>Bank Transfer (Express)</option>
+                    <option value="Alipay Transfer" ${order.serviceType === 'Alipay Transfer' ? 'selected' : ''}>Alipay Transfer</option>
+                    <option value="Enterprise to Enterprise" ${order.serviceType === 'Enterprise to Enterprise' ? 'selected' : ''}>Enterprise to Enterprise</option>
+                </select>
+                <label for="orderAmount">Order Amount:</label>
+                <input type="number" id="orderAmount" class="form-control" value="${order.orderAmount}" step="0.01" min="0.01">
+                <label for="referenceNumber">Reference Number:</label>
+                <input type="text" id="referenceNumber" class="form-control" value="${order.referenceNumber}">
+                <label for="markingNumber">Marking Number:</label>
+                <input type="text" id="markingNumber" class="form-control" value="${order.markingNumber}">
+                ${order.additionalQuestions.map(q => `
+                    <div>
+                        <label>${q.label}</label>
+                        <input type="text" class="form-control additional-question-edit" value="${q.value}" placeholder="${q.label}">
+                    </div>
+                `).join('')}
+                <button class="btn btn-primary" id="saveButton">Save</button>
+                <button class="btn btn-secondary" id="cancelButton">Cancel</button>
+            </div>
+        `;
 
-            validateOrder(updatedOrder);
-            window.orderProcessor.processedOrders[index] = updatedOrder;
-            updateOrderTable(window.orderProcessor.processedOrders);
-            window.sharedUtils.showNotification('Order updated successfully', 'success');
-        } catch (error) {
-            window.sharedUtils.showNotification(error.message, 'error');
-        }
-    }
+        document.body.appendChild(popup);
 
-    function cancelEdit(index) {
-        window.orderProcessor.processedOrders[index].isEditing = false;
-        updateOrderTable(window.orderProcessor.processedOrders);
+        // Handle save button click
+        document.getElementById('saveButton').addEventListener('click', function () {
+            try {
+                const updatedOrder = {
+                    ...order,
+                    serviceType: document.getElementById('serviceType').value,
+                    orderAmount: parseFloat(document.getElementById('orderAmount').value),
+                    referenceNumber: document.getElementById('referenceNumber').value,
+                    markingNumber: document.getElementById('markingNumber').value,
+                    additionalQuestions: Array.from(document.querySelectorAll('.additional-question-edit')).map(input => ({
+                        label: input.previousElementSibling.textContent.trim(),
+                        value: input.value
+                    })),
+                    requiresAdditionalQuestions: false // Clear the "!" after saving
+                };
+
+                validateOrder(updatedOrder);
+                window.orderProcessor.processedOrders[editingOrderIndex] = updatedOrder;
+                updateOrderTable(window.orderProcessor.processedOrders);
+                document.body.removeChild(popup);
+                window.sharedUtils.showNotification('Order updated successfully', 'success');
+            } catch (error) {
+                window.sharedUtils.showNotification(error.message, 'error');
+            }
+        });
+
+        // Handle cancel button click
+        document.getElementById('cancelButton').addEventListener('click', function () {
+            document.body.removeChild(popup);
+        });
     }
 
     function deleteOrder(index) {
@@ -181,8 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make functions available globally
     window.tableManager = {
         editOrder,
-        saveOrder,
-        cancelEdit,
         deleteOrder,
         filterOrders,
         clearOrders,
