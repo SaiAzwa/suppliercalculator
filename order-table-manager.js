@@ -170,7 +170,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return questions.map(q => `
             <div>
                 <label>${q.label}</label>
-                <input type="text" class="form-control additional-question-edit" value="${existingQuestions.find(eq => eq.label === q.label)?.value || ''}" placeholder="${q.label}">
+                <select class="form-control additional-question-edit" data-label="${q.label}">
+                    ${q.options.map(option => `
+                        <option value="${option}" ${existingQuestions.find(eq => eq.label === q.label && eq.value === option) ? 'selected' : ''}>
+                            ${option}
+                        </option>
+                    `).join('')}
+                </select>
             </div>
         `).join('');
     }
@@ -180,32 +186,31 @@ document.addEventListener('DOMContentLoaded', function () {
         const questions = getQuestionsForServiceType(serviceType);
         return questions.map(q => ({
             label: q.label,
-            value: document.querySelector(`.additional-question-edit[placeholder="${q.label}"]`)?.value || ''
+            value: document.querySelector(`.additional-question-edit[data-label="${q.label}"]`)?.value || ''
         }));
     }
 
     // Helper function to get questions for a specific service type
     function getQuestionsForServiceType(serviceType) {
         // Define additional questions for each service type
-        const questionsMap = {
-            'Bank Transfer (Saver)': [
-                { label: 'Bank Name', required: true },
-                { label: 'Account Number', required: true }
-            ],
+        const additionalQuestionsMap = {
             'Bank Transfer (Express)': [
-                { label: 'Bank Name', required: true },
-                { label: 'Account Number', required: true },
-                { label: 'Swift Code', required: true }
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
             ],
+            'Bank Transfer (Saver)': [
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
+                { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
+            ],
+            'Enterprise to Enterprise': [], // Add if you have specific questions
             'Alipay Transfer': [
-                { label: 'Alipay Account', required: true }
-            ],
-            'Enterprise to Enterprise': [
-                { label: 'Company Name', required: true },
-                { label: 'Tax ID', required: true }
+                { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
+                { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
             ]
         };
-        return questionsMap[serviceType] || [];
+        return additionalQuestionsMap[serviceType] || [];
     }
 
     // Initialize functionality
