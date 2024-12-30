@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     // List of irrelevant additional info keys to ignore
-    const IRRELEVANT_KEYS = ['marking number', 'reference number'];
+    const IRRELEVANT_KEYS = ['referencenumber', 'markingnumber'];
 
     // Normalize strings by removing special characters, spaces, and converting to lowercase
     function normalizeString(str) {
@@ -12,9 +12,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function filterAdditionalInfo(additionalInfo) {
         const filteredInfo = {};
         for (const [key, value] of Object.entries(additionalInfo)) {
-            const normalizedKey = normalizeString(key);
-            if (!IRRELEVANT_KEYS.includes(normalizedKey)) {
-                filteredInfo[normalizedKey] = value;
+            if (!IRRELEVANT_KEYS.includes(key)) {
+                filteredInfo[key] = value;
             }
         }
         return filteredInfo;
@@ -102,8 +101,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Check additional questions
         const additionalQuestionsMatch = serviceMatch.additionalQuestions.every(q => {
-            const orderValue = order.additionalInfo[normalizeString(q.label)];
-            console.log(`Question: ${q.label}`);
+            const normalizedQuestionLabel = normalizeString(q.label);
+            const orderValue = order.additionalInfo[normalizedQuestionLabel];
+            console.log(`Question: ${q.label} (Normalized: ${normalizedQuestionLabel})`);
             console.log(`Expected: ${q.value}`);
             console.log(`Got: ${orderValue}`);
             return orderValue?.toLowerCase() === q.value.toLowerCase();
@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     additionalInfo[normalizeString(key)] = value.toLowerCase();
                 }
             });
+            console.log('Parsed Additional Info:', additionalInfo);
 
             // Filter out irrelevant additional info
             const filteredAdditionalInfo = filterAdditionalInfo(additionalInfo);
