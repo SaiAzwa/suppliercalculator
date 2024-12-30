@@ -6,20 +6,10 @@ class ManualOrderProcessor {
         this.orderAmountInput = document.getElementById('orderAmount');
         this.createOrderBtn = document.getElementById('createOrderBtn');
         
-        this.serviceTypeMapping = {
-            'bankTransferSaver': 'bank-saver',
-            'bankTransferExpress': 'bank-express',
-            'bankTransferUSD': 'usd-transfer',
-            'enterpriseToEnterprise': 'enterprise',
-            'alipay': 'alipay'
-        };
-
         this.setupEventListeners();
     }
 
     setupEventListeners() {
-        // Add console.log to debug
-        console.log('Setting up event listeners');
         this.serviceTypeSelect.addEventListener('change', (e) => {
             console.log('Service type changed:', e.target.value);
             this.handleServiceTypeChange(e);
@@ -30,11 +20,19 @@ class ManualOrderProcessor {
     handleServiceTypeChange(event) {
         const selectedValue = event.target.value;
         console.log('Selected service type:', selectedValue);
-        this.additionalQuestionsDiv.innerHTML = ''; // Clear existing questions
+        this.additionalQuestionsDiv.innerHTML = '';
 
         if (!selectedValue) return;
 
-        const mappedServiceType = this.serviceTypeMapping[selectedValue];
+        const serviceTypeMapping = {
+            'bankTransferSaver': 'bank-saver',
+            'bankTransferExpress': 'bank-express',
+            'bankTransferUSD': 'usd-transfer',
+            'enterpriseToEnterprise': 'enterprise',
+            'alipay': 'alipay'
+        };
+
+        const mappedServiceType = serviceTypeMapping[selectedValue];
         console.log('Mapped service type:', mappedServiceType);
         
         // Get and render additional questions
@@ -61,8 +59,7 @@ class ManualOrderProcessor {
             'alipay': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
                 { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
-            ],
-            'enterprise': [] // No additional questions for enterprise
+            ]
         };
 
         return additionalQuestionsMap[serviceType] || [];
@@ -109,13 +106,26 @@ class ManualOrderProcessor {
         const orderAmount = parseFloat(this.orderAmountInput.value);
         const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
 
+        console.log('Creating order with:', {
+            serviceType,
+            orderAmount
+        });
+
         // Validate inputs
         if (!serviceType || orderAmount <= 0.01) {
             showNotification('Please select a valid service type and enter a valid order amount.', 'error');
             return;
         }
 
-        const mappedServiceType = this.serviceTypeMapping[serviceType];
+        const serviceTypeMapping = {
+            'bankTransferSaver': 'bank-saver',
+            'bankTransferExpress': 'bank-express',
+            'bankTransferUSD': 'usd-transfer',
+            'enterpriseToEnterprise': 'enterprise',
+            'alipay': 'alipay'
+        };
+        const mappedServiceType = serviceTypeMapping[serviceType];
+        console.log('Mapped service type:', mappedServiceType);
 
         // Collect additional info based on service type
         let additionalInfo = '';
@@ -123,6 +133,12 @@ class ManualOrderProcessor {
             const englishAccount = document.getElementById('englishaccount')?.value;
             const gsyhAccount = document.getElementById('工商银行account')?.value;
             const nongyehAccount = document.getElementById('农业银行account')?.value;
+
+            console.log('Bank transfer additional info:', {
+                englishAccount,
+                gsyhAccount,
+                nongyehAccount
+            });
 
             if (!englishAccount || !gsyhAccount || !nongyehAccount) {
                 showNotification('Please complete all required additional fields.', 'error');
@@ -132,6 +148,10 @@ class ManualOrderProcessor {
             additionalInfo = `English Account: ${englishAccount}, 工商银行 Account: ${gsyhAccount}, 农业银行 Account: ${nongyehAccount}`;
         } else if (mappedServiceType === 'usd-transfer') {
             const accountType = document.getElementById('accounttype')?.value;
+
+            console.log('USD transfer additional info:', {
+                accountType
+            });
 
             if (!accountType) {
                 showNotification('Please select an Account Type.', 'error');
@@ -143,6 +163,11 @@ class ManualOrderProcessor {
             const englishAccount = document.getElementById('englishaccount')?.value;
             const chineseAccount = document.getElementById('chineseaccount')?.value;
 
+            console.log('Alipay additional info:', {
+                englishAccount,
+                chineseAccount
+            });
+
             if (!englishAccount || !chineseAccount) {
                 showNotification('Please complete all required additional fields.', 'error');
                 return;
@@ -152,6 +177,12 @@ class ManualOrderProcessor {
         } else {
             additionalInfo = 'N/A';
         }
+
+        console.log('Final order details:', {
+            serviceType: mappedServiceType,
+            amount: orderAmount,
+            additionalInfo
+        });
 
         // Create and append the new row to the order table
         const newRow = document.createElement('tr');
