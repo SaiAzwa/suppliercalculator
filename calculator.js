@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Fields to ignore during additional information matching
-    const FIELDS_TO_IGNORE = ['reference number', 'marking number'];
+    // List of irrelevant additional info keys to ignore
+    const IRRELEVANT_KEYS = ['marking number', 'reference number'];
 
     // Normalize strings by removing special characters, spaces, and converting to lowercase
     function normalizeString(str) {
@@ -8,13 +8,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     }
 
-    // Filter out ignored fields from additional information
+    // Filter out irrelevant additional info
     function filterAdditionalInfo(additionalInfo) {
         const filteredInfo = {};
-        for (const key in additionalInfo) {
+        for (const [key, value] of Object.entries(additionalInfo)) {
             const normalizedKey = normalizeString(key);
-            if (!FIELDS_TO_IGNORE.includes(normalizedKey)) {
-                filteredInfo[normalizedKey] = additionalInfo[key];
+            if (!IRRELEVANT_KEYS.includes(normalizedKey)) {
+                filteredInfo[normalizedKey] = value;
             }
         }
         return filteredInfo;
@@ -100,18 +100,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         console.log('✓ Amount limit matched:', amountLimit.limit);
 
-        // Filter out ignored fields from additional info
-        const filteredOrderInfo = filterAdditionalInfo(order.additionalInfo);
-
         // Check additional questions
         const additionalQuestionsMatch = serviceMatch.additionalQuestions.every(q => {
-            const normalizedLabel = normalizeString(q.label);
-            if (FIELDS_TO_IGNORE.includes(normalizedLabel)) {
-                console.log(`Ignoring question: ${q.label}`);
-                return true; // Skip this question
-            }
-
-            const orderValue = filteredOrderInfo[normalizedLabel];
+            const orderValue = order.additionalInfo[normalizeString(q.label)];
             console.log(`Question: ${q.label}`);
             console.log(`Expected: ${q.value}`);
             console.log(`Got: ${orderValue}`);
@@ -251,7 +242,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     additionalInfo[normalizeString(key)] = value.toLowerCase();
                 }
             });
-            console.log('Parsed Additional Info:', additionalInfo);
+
+            // Filter out irrelevant additional info
+            const filteredAdditionalInfo = filterAdditionalInfo(additionalInfo);
+            console.log('Filtered Additional Info:', filteredAdditionalInfo);
 
             let bestSupplier = null;
             let lowestTotalCost = Infinity;
@@ -264,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const matchResults = debugSupplierMatching({
                     serviceType,
                     amount: orderAmount,
-                    additionalInfo
+                    additionalInfo: filteredAdditionalInfo
                 }, supplier);
 
                 if (!matchResults.serviceTypeMatch ||
