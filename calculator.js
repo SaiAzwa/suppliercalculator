@@ -32,8 +32,13 @@ const checkSupplierMatch = (order, supplier) => {
 
   for (const service of supplier.services) {
     if (normalizeServiceType(service.serviceType) === normalizeServiceType(order.serviceType)) {
-      // Check additional questions (ignore ref and mark)
-      const additionalQuestionsMatch = service.additionalQuestions.every(question => {
+      // Filter relevant questions based on keys in orderInfo
+      const relevantQuestions = service.additionalQuestions.filter(question => 
+        Object.keys(orderInfo).includes(question.label.toLowerCase().replace(/ /g, ''))
+      );
+
+      // Check if all relevant questions match
+      const additionalQuestionsMatch = relevantQuestions.every(question => {
         const orderValue = orderInfo[question.label.toLowerCase().replace(/ /g, '')];
         return orderValue === question.value;
       });
