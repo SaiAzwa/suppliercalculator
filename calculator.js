@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Import the string-similarity library
+    const stringSimilarity = require('string-similarity');
+
+    // Set a similarity threshold (e.g., 0.8 means 80% similarity)
+    const SIMILARITY_THRESHOLD = 0.8;
+
     // List of irrelevant additional info keys to ignore
     const IRRELEVANT_KEYS = ['referencenumber', 'markingnumber'];
 
@@ -65,18 +71,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }))
         });
 
-        // Check service type match
+        // Check service type match using fuzzy matching
         const serviceMatch = supplier.services.find(s => {
-            const normalizedSupplierService = normalizeString(s.serviceType);
-            const normalizedOrderService = normalizeString(order.serviceType);
+            const similarity = stringSimilarity.compareTwoStrings(
+                normalizeString(order.serviceType),
+                normalizeString(s.serviceType)
+            );
             console.log('Comparing service types:', {
                 supplierService: s.serviceType,
-                normalizedSupplier: normalizedSupplierService,
                 orderService: order.serviceType,
-                normalizedOrder: normalizedOrderService,
-                matches: normalizedSupplierService === normalizedOrderService
+                similarity: similarity
             });
-            return normalizedSupplierService === normalizedOrderService;
+            return similarity >= SIMILARITY_THRESHOLD;
         });
 
         if (!serviceMatch) {
