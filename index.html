@@ -294,11 +294,44 @@
     cursor: pointer;
     transition: background-color 0.3s;
     width: 150px; /* Set a fixed width */
-}
+    }
 
-.btn.toggle-btn:hover {
+    .btn.toggle-btn:hover {
     background-color: #059669;
-}
+    }
+    .rate-table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .rate-table th, .rate-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+    }
+
+    .rate-table th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: #444;
+    }
+
+    .rate-table input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    }
+
+    .rate-table input:focus {
+    border-color: #007bff;
+    outline: none;
+    }
 </style>
 </head>
 <body>
