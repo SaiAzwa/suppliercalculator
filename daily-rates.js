@@ -119,6 +119,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Create a table for each service type
         for (const [serviceType, rates] of Object.entries(ratesByService)) {
+            // Add a heading for the service type
+            const serviceHeading = document.createElement('h3');
+            serviceHeading.textContent = `Service: ${serviceType}`;
+            dailyRateSection.appendChild(serviceHeading);
+
+            // Create the table
             const table = document.createElement('table');
             table.classList.add('rate-table');
 
