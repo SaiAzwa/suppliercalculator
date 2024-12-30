@@ -92,42 +92,74 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Group rates by service type
+        const ratesByService = {};
+
         suppliers.data.forEach(supplier => {
             if (!supplier || !supplier.services) return;
-
-            const supplierHeader = document.createElement('h4');
-            supplierHeader.textContent = `Supplier: ${supplier.name || 'Unknown'}`;
-            dailyRateSection.appendChild(supplierHeader);
 
             supplier.services.forEach(service => {
                 if (!service || !service.serviceType || !Array.isArray(service.amountLimits)) return;
 
-                const serviceHeader = document.createElement('h5');
-                serviceHeader.textContent = `Service: ${service.serviceType.replace(/-/g, ' ')}`;
-                dailyRateSection.appendChild(serviceHeader);
+                const serviceType = service.serviceType.replace(/-/g, ' ');
+                if (!ratesByService[serviceType]) {
+                    ratesByService[serviceType] = [];
+                }
 
                 service.amountLimits.forEach(limit => {
                     if (!limit) return;
+                    ratesByService[serviceType].push({
+                        supplier: supplier.name,
+                        limit: limit.limit,
+                        rate: limit.rate
+                    });
+                });
+            });
+        });
 
-                    const rateRow = document.createElement('div');
-                    rateRow.classList.add('form-row');
-                    rateRow.innerHTML = `
-                        <label>Amount Limit: ${limit.limit || 'N/A'} - Rate:</label>
+        // Create a table for each service type
+        for (const [serviceType, rates] of Object.entries(ratesByService)) {
+            const table = document.createElement('table');
+            table.classList.add('rate-table');
+
+            // Table header
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+                <tr>
+                    <th>Supplier</th>
+                    <th>Amount Limit</th>
+                    <th>Rate</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+
+            // Table body
+            const tbody = document.createElement('tbody');
+            rates.forEach(rate => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${rate.supplier}</td>
+                    <td>${rate.limit || 'N/A'}</td>
+                    <td>
                         <input 
                             type="number" 
                             step="0.01"
                             min="0"
                             placeholder="Enter daily rate" 
-                            value="${limit.rate || ''}" 
-                            data-supplier="${supplier.name}" 
-                            data-service="${service.serviceType}" 
-                            data-limit="${limit.limit}"
+                            value="${rate.rate || ''}" 
+                            data-supplier="${rate.supplier}" 
+                            data-service="${serviceType}" 
+                            data-limit="${rate.limit}"
                         >
-                    `;
-                    dailyRateSection.appendChild(rateRow);
-                });
+                    </td>
+                `;
+                tbody.appendChild(row);
             });
-        });
+            table.appendChild(tbody);
+
+            // Add the table to the daily rate section
+            dailyRateSection.appendChild(table);
+        }
 
         // Add Save and Clear buttons
         const buttonContainer = document.createElement('div');
