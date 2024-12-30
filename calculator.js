@@ -1,13 +1,14 @@
-// Calculator.js
 document.addEventListener('DOMContentLoaded', function () {
+    function normalizeServiceType(serviceType) {
+        return serviceType.toLowerCase().replace(/[-\s]/g, '');
+    }
+
     function checkAmountLimit(amount, limitStr) {
-        // Handle the "> X" format
         if (limitStr.includes('>')) {
             const minValue = parseFloat(limitStr.replace('>', '').trim());
             return amount > minValue;
         }
         
-        // Handle the "X - Y" format
         if (limitStr.includes('-')) {
             const [min, max] = limitStr.split('-').map(num => parseFloat(num.trim()));
             return amount >= min && amount <= max;
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('\n=== Debug Info ===');
         console.log('Order:', {
             serviceType: order.serviceType,
+            normalizedServiceType: normalizeServiceType(order.serviceType),
             amount: order.amount,
             additionalInfo: order.additionalInfo
         });
@@ -28,14 +30,24 @@ document.addEventListener('DOMContentLoaded', function () {
             name: supplier.name,
             isActive: supplier.isActive,
             serviceType: supplier.services[0]?.serviceType,
+            normalizedServiceType: supplier.services[0]?.serviceType ? normalizeServiceType(supplier.services[0].serviceType) : '',
             amountLimits: supplier.services[0]?.amountLimits,
             additionalQuestions: supplier.services[0]?.additionalQuestions
         });
 
         // Check service type match
-        const serviceMatch = supplier.services.find(s => 
-            s.serviceType.toLowerCase() === order.serviceType.toLowerCase()
-        );
+        const serviceMatch = supplier.services.find(s => {
+            const normalizedSupplierService = normalizeServiceType(s.serviceType);
+            const normalizedOrderService = normalizeServiceType(order.serviceType);
+            console.log('Comparing service types:', {
+                supplierService: s.serviceType,
+                normalizedSupplier: normalizedSupplierService,
+                orderService: order.serviceType,
+                normalizedOrder: normalizedOrderService,
+                matches: normalizedSupplierService === normalizedOrderService
+            });
+            return normalizedSupplierService === normalizedOrderService;
+        });
         
         if (!serviceMatch) {
             console.log('❌ Service type not matched');
@@ -179,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let totalMatchesFound = 0;
 
         rows.forEach((row, index) => {
-            const serviceType = row.cells[0].textContent.trim().toLowerCase();
+            const serviceType = row.cells[0].textContent.trim();
             const orderAmount = parseFloat(row.cells[1].textContent.trim());
             const additionalInfoText = row.cells[2].textContent.trim();
 
