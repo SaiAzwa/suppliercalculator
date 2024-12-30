@@ -1,5 +1,64 @@
 // Calculator.js
 document.addEventListener('DOMContentLoaded', function () {
+    function debugSupplierMatching(order, supplier) {
+        console.log('\n=== Debug Info ===');
+        console.log('Order:', {
+            serviceType: order.serviceType,
+            amount: order.amount,
+            additionalInfo: order.additionalInfo
+        });
+        
+        console.log('Supplier:', {
+            name: supplier.name,
+            isActive: supplier.isActive,
+            serviceType: supplier.services[0]?.serviceType,
+            amountLimits: supplier.services[0]?.amountLimits,
+            additionalQuestions: supplier.services[0]?.additionalQuestions
+        });
+
+        // Check service type match
+        const serviceTypeMatch = supplier.services.some(s => 
+            s.serviceType.toLowerCase() === order.serviceType.toLowerCase()
+        );
+        console.log('Service Type Match:', serviceTypeMatch);
+
+        // Check amount limits
+        const amountLimit = supplier.services[0]?.amountLimits.find(a => {
+            if (!a?.limit) return false;
+            if (a.limit.includes('>')) {
+                const minValue = parseFloat(a.limit.replace('>', '').trim());
+                return order.amount > minValue;
+            }
+            const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
+            return order.amount >= min && order.amount <= max;
+        });
+        console.log('Amount Limit:', amountLimit);
+        console.log('Amount Limit Match:', !!amountLimit);
+
+        // Check additional questions
+        const additionalQuestionsMatch = supplier.services[0]?.additionalQuestions.every(q => {
+            const orderValue = order.additionalInfo[q.label.toLowerCase()];
+            console.log(`Question: ${q.label}`);
+            console.log(`Expected: ${q.value}`);
+            console.log(`Got: ${orderValue}`);
+            return orderValue?.toLowerCase() === q.value.toLowerCase();
+        });
+        console.log('Additional Questions Match:', additionalQuestionsMatch);
+
+        // Check daily rate
+        const rateKey = `${supplier.name}-${supplier.services[0]?.serviceType}-${amountLimit?.limit}`;
+        const dailyRate = parseFloat(JSON.parse(localStorage.getItem('dailyRates') || '{}')[rateKey]);
+        console.log('Daily Rate Key:', rateKey);
+        console.log('Daily Rate:', dailyRate);
+
+        return {
+            serviceTypeMatch,
+            amountLimitMatch: !!amountLimit,
+            additionalQuestionsMatch,
+            hasDailyRate: !isNaN(dailyRate) && dailyRate > 0
+        };
+    }
+
     document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
         const rows = document.querySelectorAll('#orderTable tbody tr');
         const suppliers = window.suppliersState.data;
@@ -22,8 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let totalMatchesFound = 0;
 
         rows.forEach((row, index) => {
-            // Extract order details
-            const serviceType = row.cells[0].textContent.trim().toLowerCase().replace(/\s/g, '-');
+            const serviceType = row.cells[0].textContent.trim().toLowerCase();
             const orderAmount = parseFloat(row.cells[1].textContent.trim());
             const additionalInfoText = row.cells[2].textContent.trim();
 
@@ -50,81 +108,61 @@ document.addEventListener('DOMContentLoaded', function () {
             suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
                 console.log(`\nChecking Supplier: ${supplier.name}`);
                 
-                // 1. Service Type Check
-                const service = supplier.services.find(s => {
-                    const matches = s.serviceType.toLowerCase() === serviceType;
-                    console.log(`Service type check: ${s.serviceType} vs ${serviceType} = ${matches}`);
-                    return matches;
-                });
+                const matchResults = debugSupplierMatching({
+                    serviceType,
+                    amount: orderAmount,
+                    additionalInfo
+                }, supplier);
 
-                if (!service) {
-                    console.log('❌ Service type not matched');
+                if (!matchResults.serviceTypeMatch) {
+                    console.log('❌ Service type mismatch');
                     return;
                 }
                 console.log('✓ Service type matched');
 
-                // 2. Amount Limit Check
-                const amountLimit = service.amountLimits.find(a => {
-                    if (!a || !a.limit) {
-                        console.log('Invalid amount limit definition');
-                        return false;
-                    }
-                    const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
-                    const withinLimit = orderAmount >= min && orderAmount <= max;
-                    console.log(`Amount limit check: ${orderAmount} in range ${min}-${max} = ${withinLimit}`);
-                    return withinLimit;
-                });
-
-                if (!amountLimit) {
-                    console.log('❌ Amount not within limits');
+                if (!matchResults.amountLimitMatch) {
+                    console.log('❌ Amount limit mismatch');
                     return;
                 }
-                console.log('✓ Amount within limits');
+                console.log('✓ Amount limit matched');
 
-                // 3. Additional Questions Check
-                console.log('Checking additional questions:');
-                const matchesQuestions = service.additionalQuestions.every(question => {
-                    const questionKey = question.label.toLowerCase();
-                    const expectedValue = question.value.toLowerCase();
-                    const orderValue = additionalInfo[questionKey];
-                    console.log(`Question: ${questionKey}`);
-                    console.log(`Expected: ${expectedValue}`);
-                    console.log(`Received: ${orderValue}`);
-                    return orderValue === expectedValue;
-                });
-
-                if (!matchesQuestions) {
-                    console.log('❌ Additional questions do not match');
+                if (!matchResults.additionalQuestionsMatch) {
+                    console.log('❌ Additional questions mismatch');
                     return;
                 }
                 console.log('✓ Additional questions matched');
 
-                // 4. Daily Rate Check
-                const rateKey = `${supplier.name}-${service.serviceType}-${amountLimit.limit}`;
-                const dailyRate = parseFloat(savedRates[rateKey]);
-                
-                console.log('Daily rate key:', rateKey);
-                console.log('Daily rate found:', dailyRate);
-
-                if (!dailyRate || dailyRate <= 0) {
-                    console.log('❌ Invalid or missing daily rate');
+                if (!matchResults.hasDailyRate) {
+                    console.log('❌ No valid daily rate');
                     return;
                 }
                 console.log('✓ Valid daily rate found');
 
-                // 5. Calculate Total Cost
+                // Find matching service
+                const service = supplier.services.find(s => s.serviceType.toLowerCase() === serviceType);
+                const amountLimit = service.amountLimits.find(a => {
+                    if (a.limit.includes('>')) {
+                        const minValue = parseFloat(a.limit.replace('>', '').trim());
+                        return orderAmount > minValue;
+                    }
+                    const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
+                    return orderAmount >= min && orderAmount <= max;
+                });
+
+                // Get daily rate and calculate cost
+                const rateKey = `${supplier.name}-${service.serviceType}-${amountLimit.limit}`;
+                const dailyRate = parseFloat(savedRates[rateKey]);
                 const serviceCharge = calculateServiceCharge(orderAmount, service.serviceCharges);
                 const totalCost = (orderAmount + serviceCharge) / dailyRate;
 
                 console.log('Service Charge:', serviceCharge);
                 console.log('Total Cost:', totalCost);
 
-                // Update best supplier if this one has lower cost
                 if (totalCost < lowestTotalCost) {
                     lowestTotalCost = totalCost;
                     bestSupplier = supplier.name;
                     matchFound = true;
-                    console.log('✓ New best supplier found!');
+                    console.log('✓ New best supplier!');
                 }
             });
 
