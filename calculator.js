@@ -1,7 +1,3 @@
-// ==========================================
-// Calculator Section
-// ==========================================
-
 document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     // Handle Additional Questions Based on Service Type
