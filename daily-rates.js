@@ -1,51 +1,44 @@
-// Daily Rates Management
 class DailyRatesManager {
     constructor() {
-        // Initialize DOM elements
-        this.initializeElements();
-        // Set up event listeners
-        this.setupEventListeners();
-        // Load initial rates
-        this.loadRatesFromLocalStorage();
-    }
-
-    initializeElements() {
+        // DOM elements
         this.dailyRateSection = document.getElementById('daily-rate-section');
         this.dailyRatesBtn = document.getElementById('DailyRatesBtn');
         this.dailyRateContainer = document.getElementById('dailyratesection');
-    }
 
-    setupEventListeners() {
+        // Set up event listeners using arrow functions
         if (this.dailyRatesBtn) {
-            this.dailyRatesBtn.addEventListener('click', () => {
-                if (this.dailyRateContainer.classList.contains('hidden')) {
-                    this.dailyRateContainer.classList.remove('hidden');
-                    this.updateDailyRateSection();
-                } else {
-                    this.dailyRateContainer.classList.add('hidden');
-                }
-            });
+            this.dailyRatesBtn.addEventListener('click', () => this.toggleDailyRates());
         }
 
-        window.addEventListener('suppliersUpdated', () => {
-            this.updateDailyRateSection();
-        });
+        // Load initial rates
+        this.loadRatesFromLocalStorage();
+
+        // Listen for supplier updates
+        window.addEventListener('suppliersUpdated', () => this.updateDailyRateSection());
     }
 
-    loadRatesFromLocalStorage() {
+    // Toggle daily rates visibility
+    toggleDailyRates = () => {
+        if (this.dailyRateContainer.classList.contains('hidden')) {
+            this.dailyRateContainer.classList.remove('hidden');
+            this.updateDailyRateSection();
+        } else {
+            this.dailyRateContainer.classList.add('hidden');
+        }
+    }
+
+    // Load rates from localStorage
+    loadRatesFromLocalStorage = () => {
         try {
             const savedRates = JSON.parse(localStorage.getItem('dailyRates')) || {};
             const suppliers = window.suppliersState?.data || [];
 
             suppliers.forEach(supplier => {
                 if (!supplier?.services) return;
-
                 supplier.services.forEach(service => {
                     if (!service?.amountLimits) return;
-
                     service.amountLimits.forEach(limit => {
                         if (!limit) return;
-
                         const key = `${supplier.name}-${service.serviceType}-${limit.limit}`;
                         if (savedRates[key]) {
                             limit.rate = parseFloat(savedRates[key]);
@@ -59,6 +52,7 @@ class DailyRatesManager {
         }
     }
 
+    // Save rates to localStorage
     saveDailyRates = () => {
         try {
             const rateInputs = document.querySelectorAll('#daily-rate-section input[type="number"]');
@@ -86,6 +80,7 @@ class DailyRatesManager {
         }
     }
 
+    // Clear all rates
     clearRates = () => {
         try {
             localStorage.removeItem('dailyRates');
@@ -113,6 +108,7 @@ class DailyRatesManager {
         }
     }
 
+    // Update the daily rate section in the UI
     updateDailyRateSection = () => {
         if (!this.dailyRateSection) return;
         
@@ -126,9 +122,9 @@ class DailyRatesManager {
 
         const ratesByService = {};
 
+        // Group rates by service type
         suppliers.forEach(supplier => {
             if (!supplier?.services) return;
-
             supplier.services.forEach(service => {
                 if (!service?.serviceType || !Array.isArray(service.amountLimits)) return;
 
@@ -148,6 +144,7 @@ class DailyRatesManager {
             });
         });
 
+        // Create tables for each service type
         Object.entries(ratesByService).forEach(([serviceType, rates]) => {
             const section = document.createElement('div');
             section.className = 'service-section';
@@ -159,42 +156,41 @@ class DailyRatesManager {
             const table = document.createElement('table');
             table.className = 'rate-table';
 
-            const thead = document.createElement('thead');
-            thead.innerHTML = `
-                <tr>
-                    <th>Supplier</th>
-                    <th>Amount Limit</th>
-                    <th>Rate</th>
-                </tr>
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Amount Limit</th>
+                        <th>Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rates.map(rate => `
+                        <tr>
+                            <td>${rate.supplier}</td>
+                            <td>${rate.limit || 'N/A'}</td>
+                            <td>
+                                <input 
+                                    type="number" 
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Enter daily rate"
+                                    value="${rate.rate || ''}"
+                                    data-supplier="${rate.supplier}"
+                                    data-service="${serviceType}"
+                                    data-limit="${rate.limit}"
+                                >
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
             `;
-            table.appendChild(thead);
 
-            const tbody = document.createElement('tbody');
-            rates.forEach(rate => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${rate.supplier}</td>
-                    <td>${rate.limit || 'N/A'}</td>
-                    <td>
-                        <input 
-                            type="number" 
-                            step="0.01"
-                            min="0"
-                            placeholder="Enter daily rate"
-                            value="${rate.rate || ''}"
-                            data-supplier="${rate.supplier}"
-                            data-service="${serviceType}"
-                            data-limit="${rate.limit}"
-                        >
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            table.appendChild(tbody);
             section.appendChild(table);
             this.dailyRateSection.appendChild(section);
         });
 
+        // Add buttons
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'button-container';
         buttonContainer.style.marginTop = '20px';
@@ -202,20 +198,21 @@ class DailyRatesManager {
         const saveButton = document.createElement('button');
         saveButton.className = 'btn';
         saveButton.textContent = 'Save Rates';
-        saveButton.onclick = this.saveDailyRates;
+        saveButton.onclick = () => this.saveDailyRates();
 
         const clearButton = document.createElement('button');
         clearButton.className = 'btn';
         clearButton.textContent = 'Clear Rates';
         clearButton.style.marginLeft = '10px';
-        clearButton.onclick = this.clearRates;
+        clearButton.onclick = () => this.clearRates();
 
         buttonContainer.appendChild(saveButton);
         buttonContainer.appendChild(clearButton);
         this.dailyRateSection.appendChild(buttonContainer);
     }
 
-    showNotification(message, type) {
+    // Show notification
+    showNotification = (message, type) => {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.textContent = message;
