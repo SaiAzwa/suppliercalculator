@@ -1,7 +1,11 @@
+// ==========================================
 // Calculator Section
+// ==========================================
 
 document.addEventListener('DOMContentLoaded', function () {
+    // ==========================================
     // Handle Additional Questions Based on Service Type
+    // ==========================================
     function handleAdditionalQuestionsBasedOnService(serviceType) {
         const questionsContainer = document.getElementById('additionalQuestions');
         questionsContainer.innerHTML = '';
@@ -45,7 +49,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Add event listener for service type selection
+    // ==========================================
+    // Add Event Listener for Service Type Selection
+    // ==========================================
     const serviceTypeElement = document.getElementById('serviceType');
     if (serviceTypeElement) {
         serviceTypeElement.addEventListener('change', function() {
@@ -53,7 +59,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ==========================================
     // Order Creation Functionality
+    // ==========================================
     document.getElementById('createOrderBtn').addEventListener('click', function () {
         const serviceType = document.getElementById('serviceType')?.value;
         const orderAmount = parseFloat(document.getElementById('orderAmount')?.value);
@@ -122,7 +130,9 @@ document.addEventListener('DOMContentLoaded', function () {
         alert('Order added successfully!');
     });
 
+    // ==========================================
     // Best Supplier Calculation Functionality
+    // ==========================================
     document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
         const rows = document.querySelectorAll('#orderTable tbody tr');
 
@@ -143,6 +153,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 const [key, value] = info.split(':').map(s => s.trim());
                 additionalInfo[key.toLowerCase()] = value.toLowerCase();
             });
+
+            // ==========================================
+            // Replace `suppliers` with your actual supplier data
+            // If `suppliers` is defined in another file, ensure it's loaded before this script
+            // ==========================================
+            const suppliers = [
+                // Example supplier data (replace with your actual data)
+                {
+                    name: 'Supplier A',
+                    isActive: true,
+                    services: [
+                        {
+                            serviceType: 'bankTransferSaver',
+                            amountLimits: [
+                                { limit: '100-1000', charge: '10 CNY' }
+                            ],
+                            additionalQuestions: [
+                                { label: 'English Account', value: 'Yes' }
+                            ]
+                        }
+                    ]
+                }
+                // Add more suppliers as needed
+            ];
 
             suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
                 const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
@@ -191,7 +225,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// ==========================================
 // Utility Functions
+// ==========================================
 function calculateServiceCharge(orderAmount, serviceCharges) {
     let totalServiceCharge = 0;
 
