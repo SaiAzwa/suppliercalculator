@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const rows = document.querySelectorAll('#orderTable tbody tr');
         const suppliers = window.suppliersState.data;
 
+        console.log('Starting calculation...');
         console.log('All Suppliers:', suppliers);
         console.log('All Orders:', Array.from(rows).map(row => ({
             serviceType: row.cells[0].textContent.trim(),
@@ -13,8 +14,8 @@ document.addEventListener('DOMContentLoaded', function () {
         })));
 
         // Load daily rates from localStorage
-        const savedRates = JSON.parse(localStorage.getItem('dailyRates')) || {};
-        console.log('Saved Daily Rates:', savedRates);
+        const dailyRates = JSON.parse(localStorage.getItem('dailyRates')) || {};
+        console.log('Loaded Daily Rates:', dailyRates);
 
         if (rows.length === 0) {
             showNotification('No orders to process.', 'error');
@@ -25,6 +26,8 @@ document.addEventListener('DOMContentLoaded', function () {
             showNotification('No suppliers available.', 'error');
             return;
         }
+
+        let foundMatchingSupplier = false;
 
         rows.forEach((row, index) => {
             const serviceType = row.cells[0].textContent.trim().toLowerCase().replace(/\s/g, '-');
@@ -48,22 +51,35 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             console.log('Parsed Additional Info:', additionalInfo);
 
-            suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
+            // Filter active suppliers
+            const activeSuppliers = suppliers.filter(supplier => supplier.isActive);
+            console.log(`Found ${activeSuppliers.length} active suppliers`);
+
+            activeSuppliers.forEach(supplier => {
                 console.log(`\nChecking Supplier: ${supplier.name}`);
                 
                 // Find matching service
-                const service = supplier.services.find(s => s.serviceType.toLowerCase() === serviceType);
+                const service = supplier.services.find(s => {
+                    const matches = s.serviceType.toLowerCase() === serviceType;
+                    console.log(`Checking service ${s.serviceType} against ${serviceType}: ${matches}`);
+                    return matches;
+                });
+
                 if (!service) {
-                    console.log(`- No matching service found (${serviceType})`);
+                    console.log(`- No matching service found for ${serviceType}`);
                     return;
                 }
                 console.log('- Matching service found');
 
                 // Check amount limits
                 const amountLimit = service.amountLimits.find(a => {
+                    if (!a || !a.limit) return false;
                     const [min, max] = a.limit.split('-').map(num => parseFloat(num.trim()));
-                    return orderAmount >= min && orderAmount <= max;
+                    const withinLimit = orderAmount >= min && orderAmount <= max;
+                    console.log(`Checking amount ${orderAmount} against limit ${a.limit}: ${withinLimit}`);
+                    return withinLimit;
                 });
+
                 if (!amountLimit) {
                     console.log(`- Amount ${orderAmount} outside limits`);
                     return;
@@ -80,15 +96,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log(`  Got: ${orderValue}`);
                     return orderValue === expectedValue;
                 });
+
                 if (!matchesQuestions) {
                     console.log('- Additional questions do not match');
                     return;
                 }
                 console.log('- All questions match');
 
-                // Get daily rate from localStorage using the correct key format
+                // Get daily rate
                 const rateKey = `${supplier.name}-${service.serviceType}-${amountLimit.limit}`;
-                const dailyRate = parseFloat(savedRates[rateKey]);
+                const dailyRate = parseFloat(dailyRates[rateKey]);
                 
                 console.log('- Checking daily rate for key:', rateKey);
                 console.log('- Daily rate found:', dailyRate);
@@ -109,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (totalCost < lowestTotalCost) {
                     lowestTotalCost = totalCost;
                     bestSupplier = supplier.name;
+                    foundMatchingSupplier = true;
                     console.log('- New best supplier!');
                 }
             });
@@ -116,22 +134,41 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update the best supplier cell in the table
             const bestSupplierCell = row.querySelector('.best-supplier');
             if (bestSupplierCell) {
-                bestSupplierCell.textContent = bestSupplier || 'No suitable supplier found';
+                if (bestSupplier) {
+                    bestSupplierCell.textContent = bestSupplier;
+                    bestSupplierCell.style.color = '#28a745'; // Green for success
+                } else {
+                    bestSupplierCell.textContent = 'No suitable supplier found';
+                    bestSupplierCell.style.color = '#dc3545'; // Red for no match
+                }
             }
         });
 
-        showNotification('Best supplier calculation completed.', 'success');
+        if (!foundMatchingSupplier) {
+            showNotification('No suitable suppliers found. Please check daily rates and supplier settings.', 'error');
+        } else {
+            showNotification('Best supplier calculation completed.', 'success');
+        }
     });
 
     // Utility Functions
     function calculateServiceCharge(orderAmount, serviceCharges) {
         let totalServiceCharge = 0;
 
+        if (!Array.isArray(serviceCharges)) {
+            console.warn('Invalid service charges:', serviceCharges);
+            return 0;
+        }
+
         serviceCharges.forEach(charge => {
-            const condition = charge.condition;
-            const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
-            if (evaluateCondition(condition, orderAmount)) {
-                totalServiceCharge += chargeAmount;
+            try {
+                const condition = charge.condition;
+                const chargeAmount = parseFloat(charge.charge.replace(/[^0-9.]/g, ''));
+                if (evaluateCondition(condition, orderAmount)) {
+                    totalServiceCharge += chargeAmount;
+                }
+            } catch (error) {
+                console.error('Error calculating service charge:', error);
             }
         });
 
@@ -167,7 +204,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Helper function to show notifications
     function showNotification(message, type) {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
