@@ -1,14 +1,27 @@
 document.addEventListener('DOMContentLoaded', function () {
-    function normalizeServiceType(serviceType) {
-        return serviceType.toLowerCase().replace(/[-\s]/g, '');
+    // Normalize strings by removing special characters, spaces, and converting to lowercase
+    function normalizeString(str) {
+        if (!str || typeof str !== 'string') return '';
+        return str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     }
 
+    // Check if the amount falls within the specified limit
     function checkAmountLimit(amount, limitStr) {
+        if (typeof amount !== 'number' || isNaN(amount)) {
+            console.error('Invalid amount:', amount);
+            return false;
+        }
+
+        if (!limitStr || typeof limitStr !== 'string') {
+            console.error('Invalid limit string:', limitStr);
+            return false;
+        }
+
         if (limitStr.includes('>')) {
             const minValue = parseFloat(limitStr.replace('>', '').trim());
             return amount > minValue;
         }
-        
+
         if (limitStr.includes('-')) {
             const [min, max] = limitStr.split('-').map(num => parseFloat(num.trim()));
             return amount >= min && amount <= max;
@@ -17,28 +30,31 @@ document.addEventListener('DOMContentLoaded', function () {
         return false;
     }
 
+    // Debug supplier matching process
     function debugSupplierMatching(order, supplier) {
         console.log('\n=== Debug Info ===');
         console.log('Order:', {
             serviceType: order.serviceType,
-            normalizedServiceType: normalizeServiceType(order.serviceType),
+            normalizedServiceType: normalizeString(order.serviceType),
             amount: order.amount,
             additionalInfo: order.additionalInfo
         });
-        
+
         console.log('Supplier:', {
             name: supplier.name,
             isActive: supplier.isActive,
-            serviceType: supplier.services[0]?.serviceType,
-            normalizedServiceType: supplier.services[0]?.serviceType ? normalizeServiceType(supplier.services[0].serviceType) : '',
-            amountLimits: supplier.services[0]?.amountLimits,
-            additionalQuestions: supplier.services[0]?.additionalQuestions
+            services: supplier.services.map(s => ({
+                serviceType: s.serviceType,
+                normalizedServiceType: normalizeString(s.serviceType),
+                amountLimits: s.amountLimits,
+                additionalQuestions: s.additionalQuestions
+            }))
         });
 
         // Check service type match
         const serviceMatch = supplier.services.find(s => {
-            const normalizedSupplierService = normalizeServiceType(s.serviceType);
-            const normalizedOrderService = normalizeServiceType(order.serviceType);
+            const normalizedSupplierService = normalizeString(s.serviceType);
+            const normalizedOrderService = normalizeString(order.serviceType);
             console.log('Comparing service types:', {
                 supplierService: s.serviceType,
                 normalizedSupplier: normalizedSupplierService,
@@ -48,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             return normalizedSupplierService === normalizedOrderService;
         });
-        
+
         if (!serviceMatch) {
             console.log('❌ Service type not matched');
             return { serviceTypeMatch: false };
@@ -71,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Check additional questions
         const additionalQuestionsMatch = serviceMatch.additionalQuestions.every(q => {
-            const orderValue = order.additionalInfo[q.label.toLowerCase()];
+            const orderValue = order.additionalInfo[normalizeString(q.label)];
             console.log(`Question: ${q.label}`);
             console.log(`Expected: ${q.value}`);
             console.log(`Got: ${orderValue}`);
@@ -80,10 +96,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!additionalQuestionsMatch) {
             console.log('❌ Additional questions not matched');
-            return { 
-                serviceTypeMatch: true, 
-                amountLimitMatch: true, 
-                additionalQuestionsMatch: false 
+            return {
+                serviceTypeMatch: true,
+                amountLimitMatch: true,
+                additionalQuestionsMatch: false
             };
         }
         console.log('✓ Additional questions matched');
@@ -105,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
 
+    // Calculate service charges based on conditions
     function calculateServiceCharge(orderAmount, serviceCharges) {
         let totalServiceCharge = 0;
 
@@ -128,6 +145,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return totalServiceCharge;
     }
 
+    // Evaluate conditions for service charges
     function evaluateCondition(condition, amount) {
         try {
             if (!condition) return false;
@@ -157,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Show notifications to the user
     function showNotification(message, type) {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
@@ -205,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
             additionalInfoText.split(',').forEach(info => {
                 const [key, value] = info.split(':').map(s => s.trim());
                 if (key && value) {
-                    additionalInfo[key.toLowerCase()] = value.toLowerCase();
+                    additionalInfo[normalizeString(key)] = value.toLowerCase();
                 }
             });
             console.log('Parsed Additional Info:', additionalInfo);
@@ -217,16 +236,16 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check each active supplier
             suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
                 console.log(`\nChecking Supplier: ${supplier.name}`);
-                
+
                 const matchResults = debugSupplierMatching({
                     serviceType,
                     amount: orderAmount,
                     additionalInfo
                 }, supplier);
 
-                if (!matchResults.serviceTypeMatch || 
-                    !matchResults.amountLimitMatch || 
-                    !matchResults.additionalQuestionsMatch || 
+                if (!matchResults.serviceTypeMatch ||
+                    !matchResults.amountLimitMatch ||
+                    !matchResults.additionalQuestionsMatch ||
                     !matchResults.hasDailyRate) {
                     return;
                 }
