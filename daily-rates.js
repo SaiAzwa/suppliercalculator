@@ -1,31 +1,21 @@
 // Daily Rates Management
 class DailyRatesManager {
     constructor() {
+        // Initialize DOM elements
         this.dailyRateSection = document.getElementById('daily-rate-section');
         this.dailyRatesBtn = document.getElementById('DailyRatesBtn');
         this.dailyRateContainer = document.getElementById('dailyratesection');
         
-        // Bind methods
-        this.handleDailyRatesBtnClick = this.handleDailyRatesBtnClick.bind(this);
-        this.saveDailyRates = this.saveDailyRates.bind(this);
-        this.clearRates = this.clearRates.bind(this);
-        
-        this.initialize();
-    }
-
-    initialize() {
-        // Load initial rates
-        this.loadRatesFromLocalStorage();
-
-        // Set up event listeners
-        if (this.dailyRatesBtn && this.dailyRateContainer) {
-            this.dailyRatesBtn.addEventListener('click', this.handleDailyRatesBtnClick);
+        // Initialize event listeners
+        if (this.dailyRatesBtn) {
+            this.dailyRatesBtn.addEventListener('click', () => this.handleDailyRatesBtnClick());
         }
 
         // Listen for supplier updates
-        window.addEventListener('suppliersUpdated', () => {
-            this.updateDailyRateSection();
-        });
+        window.addEventListener('suppliersUpdated', () => this.updateDailyRateSection());
+
+        // Load initial rates
+        this.loadRatesFromLocalStorage();
     }
 
     handleDailyRatesBtnClick() {
@@ -64,7 +54,7 @@ class DailyRatesManager {
         }
     }
 
-    saveRatesToLocalStorage() {
+    saveDailyRates() {
         try {
             const rateInputs = document.querySelectorAll('#daily-rate-section input[type="number"]');
             const savedRates = {};
@@ -218,13 +208,13 @@ class DailyRatesManager {
         const saveButton = document.createElement('button');
         saveButton.className = 'btn';
         saveButton.textContent = 'Save Rates';
-        saveButton.addEventListener('click', this.saveDailyRates);
+        saveButton.addEventListener('click', () => this.saveDailyRates());
 
         const clearButton = document.createElement('button');
         clearButton.className = 'btn';
         clearButton.textContent = 'Clear Rates';
         clearButton.style.marginLeft = '10px';
-        clearButton.addEventListener('click', this.clearRates);
+        clearButton.addEventListener('click', () => this.clearRates());
 
         buttonContainer.appendChild(saveButton);
         buttonContainer.appendChild(clearButton);
