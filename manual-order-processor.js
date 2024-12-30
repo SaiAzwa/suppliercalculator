@@ -5,22 +5,8 @@ class ManualOrderProcessor {
         this.serviceTypeSelect = document.getElementById('serviceType');
         this.orderAmountInput = document.getElementById('orderAmount');
         this.createOrderBtn = document.getElementById('createOrderBtn');
-
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        this.serviceTypeSelect.addEventListener('change', () => this.handleServiceTypeChange());
-        this.createOrderBtn.addEventListener('click', () => this.handleCreateOrder());
-    }
-
-    handleServiceTypeChange() {
-        const serviceType = this.serviceTypeSelect.value;
-        this.additionalQuestionsDiv.innerHTML = '';
-
-        if (!serviceType) return;
-
-        const serviceTypeMapping = {
+        
+        this.serviceTypeMapping = {
             'bankTransferSaver': 'bank-saver',
             'bankTransferExpress': 'bank-express',
             'bankTransferUSD': 'usd-transfer',
@@ -28,11 +14,36 @@ class ManualOrderProcessor {
             'alipay': 'alipay'
         };
 
-        const mappedServiceType = serviceTypeMapping[serviceType];
-        this.handleAdditionalQuestionsBasedOnService(mappedServiceType);
+        this.setupEventListeners();
     }
 
-    handleAdditionalQuestionsBasedOnService(serviceType) {
+    setupEventListeners() {
+        // Add console.log to debug
+        console.log('Setting up event listeners');
+        this.serviceTypeSelect.addEventListener('change', (e) => {
+            console.log('Service type changed:', e.target.value);
+            this.handleServiceTypeChange(e);
+        });
+        this.createOrderBtn.addEventListener('click', () => this.handleCreateOrder());
+    }
+
+    handleServiceTypeChange(event) {
+        const selectedValue = event.target.value;
+        console.log('Selected service type:', selectedValue);
+        this.additionalQuestionsDiv.innerHTML = ''; // Clear existing questions
+
+        if (!selectedValue) return;
+
+        const mappedServiceType = this.serviceTypeMapping[selectedValue];
+        console.log('Mapped service type:', mappedServiceType);
+        
+        // Get and render additional questions
+        const questions = this.getAdditionalQuestions(mappedServiceType);
+        console.log('Questions to render:', questions);
+        this.renderAdditionalQuestions(questions);
+    }
+
+    getAdditionalQuestions(serviceType) {
         const additionalQuestionsMap = {
             'bank-express': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
@@ -50,26 +61,47 @@ class ManualOrderProcessor {
             'alipay': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
                 { label: 'Chinese Account', type: 'select', options: ['Yes', 'No'] }
-            ]
+            ],
+            'enterprise': [] // No additional questions for enterprise
         };
 
-        const questions = additionalQuestionsMap[serviceType];
+        return additionalQuestionsMap[serviceType] || [];
+    }
 
-        if (questions) {
-            questions.forEach(question => {
-                const questionDiv = document.createElement('div');
-                questionDiv.classList.add('form-group');
-                questionDiv.innerHTML = `
-                    <label>${question.label}</label>
-                    ${
-                        question.type === 'select'
-                            ? `<select id="${question.label.toLowerCase().replace(/\s/g, '')}">${question.options.map(option => `<option value="${option.toLowerCase()}">${option}</option>`).join('')}</select>`
-                            : `<input type="${question.type}" id="${question.label.toLowerCase().replace(/\s/g, '')}" placeholder="${question.placeholder || ''}" />`
-                    }
-                `;
-                this.additionalQuestionsDiv.appendChild(questionDiv);
-            });
-        }
+    renderAdditionalQuestions(questions) {
+        console.log('Rendering questions:', questions);
+        questions.forEach(question => {
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+
+            const label = document.createElement('label');
+            label.htmlFor = question.label.toLowerCase().replace(/\s/g, '');
+            label.textContent = question.label;
+            formGroup.appendChild(label);
+
+            if (question.type === 'select') {
+                const select = document.createElement('select');
+                select.id = question.label.toLowerCase().replace(/\s/g, '');
+                select.className = 'form-control';
+                
+                question.options.forEach(optionText => {
+                    const option = document.createElement('option');
+                    option.value = optionText.toLowerCase();
+                    option.textContent = optionText;
+                    select.appendChild(option);
+                });
+                
+                formGroup.appendChild(select);
+            } else {
+                const input = document.createElement('input');
+                input.type = question.type;
+                input.id = question.label.toLowerCase().replace(/\s/g, '');
+                input.className = 'form-control';
+                formGroup.appendChild(input);
+            }
+
+            this.additionalQuestionsDiv.appendChild(formGroup);
+        });
     }
 
     handleCreateOrder() {
@@ -83,15 +115,7 @@ class ManualOrderProcessor {
             return;
         }
 
-        // Map the service type to the correct format
-        const serviceTypeMapping = {
-            'bankTransferSaver': 'bank-saver',
-            'bankTransferExpress': 'bank-express',
-            'bankTransferUSD': 'usd-transfer',
-            'enterpriseToEnterprise': 'enterprise',
-            'alipay': 'alipay'
-        };
-        const mappedServiceType = serviceTypeMapping[serviceType];
+        const mappedServiceType = this.serviceTypeMapping[serviceType];
 
         // Collect additional info based on service type
         let additionalInfo = '';
@@ -105,11 +129,7 @@ class ManualOrderProcessor {
                 return;
             }
 
-            additionalInfo = `
-                English Account: ${englishAccount},
-                工商银行 Account: ${gsyhAccount},
-                农业银行 Account: ${nongyehAccount}
-            `;
+            additionalInfo = `English Account: ${englishAccount}, 工商银行 Account: ${gsyhAccount}, 农业银行 Account: ${nongyehAccount}`;
         } else if (mappedServiceType === 'usd-transfer') {
             const accountType = document.getElementById('accounttype')?.value;
 
@@ -128,10 +148,7 @@ class ManualOrderProcessor {
                 return;
             }
 
-            additionalInfo = `
-                English Account: ${englishAccount},
-                Chinese Account: ${chineseAccount}
-            `;
+            additionalInfo = `English Account: ${englishAccount}, Chinese Account: ${chineseAccount}`;
         } else {
             additionalInfo = 'N/A';
         }
