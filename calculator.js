@@ -11,17 +11,17 @@ document.addEventListener('DOMContentLoaded', function () {
         questionsContainer.innerHTML = '';
 
         const additionalQuestionsMap = {
-            'bankTransferSaver': [
+            'bank-express': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
             ],
-            'bankTransferExpress': [
+            'bank-saver': [
                 { label: 'English Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '工商银行 Account', type: 'select', options: ['Yes', 'No'] },
                 { label: '农业银行 Account', type: 'select', options: ['Yes', 'No'] }
             ],
-            'bankTransferUSD': [
+            'usd-transfer': [
                 { label: 'Account Type', type: 'select', options: ['Personal', 'Company'] }
             ],
             'alipay': [
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Collect additional info based on service type
         let additionalInfo = '';
-        if (serviceType === 'bankTransferSaver' || serviceType === 'bankTransferExpress') {
+        if (serviceType === 'bank-express' || serviceType === 'bank-saver') {
             const englishAccount = document.getElementById('englishaccount')?.value;
             const gsyhAccount = document.getElementById('工商银行account')?.value;
             const nongyehAccount = document.getElementById('农业银行account')?.value;
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 工商银行 Account: ${gsyhAccount},
                 农业银行 Account: ${nongyehAccount}
             `;
-        } else if (serviceType === 'bankTransferUSD') {
+        } else if (serviceType === 'usd-transfer') {
             const accountType = document.getElementById('accounttype')?.value;
 
             if (!accountType) {
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create and append the new row to the order table
         const newRow = document.createElement('tr');
         newRow.innerHTML = `
-            <td>${serviceType.replace(/([A-Z])/g, ' $1').trim()}</td>
+            <td>${serviceType.replace(/-/g, ' ')}</td>
             <td>${orderAmount.toFixed(2)}</td>
             <td>${additionalInfo}</td>
             <td class="best-supplier">Calculating...</td>
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('Suppliers Data:', suppliers); // Debugging: Check suppliers data
 
         rows.forEach(row => {
-            const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
+            const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase().replace(/\s/g, '-');
             const orderAmount = parseFloat(row.cells[1].textContent.trim());
             const additionalInfoCell = row.cells[2].textContent.trim();
             let bestSupplier = null;
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
-                const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
+                const service = supplier.services.find(s => s.serviceType.toLowerCase() === serviceTypeCell);
                 if (!service) return;
 
                 const amountLimit = service.amountLimits.find(a => {
