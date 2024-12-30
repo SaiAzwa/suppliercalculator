@@ -26,34 +26,6 @@ const parseAdditionalInfo = (additionalInfoText) => {
   return parsedInfo;
 };
 
-// Function to calculate the total cost for a supplier based on daily rate and service charges
-const calculateTotalCost = (order, supplier) => {
-  let totalCost = 0;
-
-  // Find the matching service
-  const service = supplier.services.find(
-    (s) => normalizeServiceType(s.serviceType) === normalizeServiceType(order.serviceType)
-  );
-
-  if (service) {
-    // Add daily rate (if available)
-    if (service.dailyRate) {
-      totalCost += service.dailyRate;
-    }
-
-    // Add service charges (if applicable)
-    if (service.serviceCharges) {
-      for (const charge of service.serviceCharges) {
-        if (eval(`order.amount ${charge.condition}`)) { // Evaluate the condition (e.g., "< 10000")
-          totalCost += parseFloat(charge.charge.replace(/[^0-9.]/g, '')); // Extract numeric value from charge
-        }
-      }
-    }
-  }
-
-  return totalCost;
-};
-
 // Function to check if a supplier matches the order
 const checkSupplierMatch = (order, supplier) => {
   const orderInfo = parseAdditionalInfo(order.additionalInfoText);
@@ -75,7 +47,7 @@ const checkSupplierMatch = (order, supplier) => {
   return false; // No match found
 };
 
-// Function to process a single order and find the best supplier
+// Function to process a single order and find matching suppliers
 const processOrder = (order, suppliers) => {
   console.log(`=== Processing Order ===`);
   console.log(`Service Type: ${order.serviceType}`);
@@ -90,24 +62,14 @@ const processOrder = (order, suppliers) => {
   for (const supplier of suppliers) {
     console.log(`Checking Supplier: ${supplier.name}`);
     if (checkSupplierMatch(order, supplier)) {
-      const totalCost = calculateTotalCost(order, supplier);
-      console.log(`✅ Supplier ${supplier.name} matched! Total Cost: ${totalCost}`);
-      matchingSuppliers.push({ supplier, totalCost });
+      console.log(`✅ Supplier ${supplier.name} matched!`);
+      matchingSuppliers.push(supplier);
     } else {
       console.log(`❌ Supplier ${supplier.name} did not match.`);
     }
   }
 
-  // Find the best supplier (lowest total cost)
-  if (matchingSuppliers.length > 0) {
-    const bestSupplier = matchingSuppliers.reduce((prev, curr) =>
-      curr.totalCost < prev.totalCost ? curr : prev
-    );
-    console.log(`Best Supplier: ${bestSupplier.supplier.name} with Total Cost: ${bestSupplier.totalCost}`);
-    return bestSupplier;
-  }
-
-  return null; // No matching suppliers found
+  return matchingSuppliers;
 };
 
 // Main calculation function to process all orders
@@ -119,10 +81,10 @@ const calculate = (orders, suppliers) => {
   const results = [];
 
   for (const order of orders) {
-    const bestSupplier = processOrder(order, suppliers);
+    const matchingSuppliers = processOrder(order, suppliers);
     results.push({
       order,
-      bestSupplier,
+      matchingSuppliers,
     });
   }
 
@@ -130,5 +92,68 @@ const calculate = (orders, suppliers) => {
   return results;
 };
 
-// Export the calculate function for use in other modules
-module.exports = { calculate };
+// Example usage
+const orders = [
+  {
+    serviceType: 'Alipay Transfer',
+    amount: 7696.7,
+    additionalInfoText: `Ref: 887593
+                    Mark: 1596BST
+                    English Account: Yes
+                    Chinese Account: No`,
+  },
+  {
+    serviceType: 'Bank Transfer (Express)',
+    amount: 235.72,
+    additionalInfoText: `Ref: 737976
+                    Mark: 2487EEE
+                    English Account: Yes
+                    工商银行 Account: No
+                    农业银行 Account: Yes`,
+  },
+  // Add more orders as needed
+];
+
+const suppliers = [
+  {
+    name: 'Atvantic',
+    isActive: true,
+    services: [
+      {
+        serviceType: 'alipay',
+        amountLimits: [{ limit: '> 0.01', rate: null }],
+        serviceCharges: [],
+        additionalQuestions: [
+          { label: 'English Account', value: 'yes' },
+          { label: 'Chinese Account', value: 'yes' },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Union',
+    isActive: true,
+    services: [
+      {
+        serviceType: 'alipay',
+        amountLimits: [{ limit: '> 500', rate: null }],
+        serviceCharges: [
+          { condition: '< 10000', charge: '50 CNY' },
+          { condition: '10001 - 20000', charge: '30 CNY' },
+          { condition: '20001 - 30000', charge: '25 CNY' },
+        ],
+        additionalQuestions: [
+          { label: 'English Account', value: 'yes' },
+          { label: 'Chinese Account', value: 'yes' },
+        ],
+      },
+    ],
+  },
+  // Add more suppliers as needed
+];
+
+// Run the calculation
+const results = calculate(orders, suppliers);
+
+// Log the final results
+console.log('Final Results:', results);
