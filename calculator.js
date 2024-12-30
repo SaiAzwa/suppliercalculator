@@ -141,6 +141,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Access suppliers data from window.suppliersState
+        const suppliers = window.suppliersState.data;
+
+        if (!suppliers || suppliers.length === 0) {
+            alert('No suppliers available.');
+            return;
+        }
+
+        console.log('Suppliers Data:', suppliers); // Debugging: Check suppliers data
+
         rows.forEach(row => {
             const serviceTypeCell = row.cells[0].textContent.trim().toLowerCase();
             const orderAmount = parseFloat(row.cells[1].textContent.trim());
@@ -153,30 +163,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const [key, value] = info.split(':').map(s => s.trim());
                 additionalInfo[key.toLowerCase()] = value.toLowerCase();
             });
-
-            // ==========================================
-            // Replace `suppliers` with your actual supplier data
-            // If `suppliers` is defined in another file, ensure it's loaded before this script
-            // ==========================================
-            const suppliers = [
-                // Example supplier data (replace with your actual data)
-                {
-                    name: 'Supplier A',
-                    isActive: true,
-                    services: [
-                        {
-                            serviceType: 'bankTransferSaver',
-                            amountLimits: [
-                                { limit: '100-1000', charge: '10 CNY' }
-                            ],
-                            additionalQuestions: [
-                                { label: 'English Account', value: 'Yes' }
-                            ]
-                        }
-                    ]
-                }
-                // Add more suppliers as needed
-            ];
 
             suppliers.filter(supplier => supplier.isActive).forEach(supplier => {
                 const service = supplier.services.find(s => s.serviceType.replace(/-/g, ' ').toLowerCase() === serviceTypeCell);
