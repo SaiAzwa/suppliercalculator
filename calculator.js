@@ -32,13 +32,8 @@ const checkSupplierMatch = (order, supplier) => {
 
   for (const service of supplier.services) {
     if (normalizeServiceType(service.serviceType) === normalizeServiceType(order.serviceType)) {
-      // Filter relevant questions based on keys in orderInfo
-      const relevantQuestions = service.additionalQuestions.filter(question => 
-        Object.keys(orderInfo).includes(question.label.toLowerCase().replace(/ /g, ''))
-      );
-
-      // Check if all relevant questions match
-      const additionalQuestionsMatch = relevantQuestions.every(question => {
+      // Check additional questions (ignore ref and mark)
+      const additionalQuestionsMatch = service.additionalQuestions.every(question => {
         const orderValue = orderInfo[question.label.toLowerCase().replace(/ /g, '')];
         return orderValue === question.value;
       });
@@ -54,23 +49,23 @@ const checkSupplierMatch = (order, supplier) => {
 
 // Function to process a single order and find matching suppliers
 const processOrder = (order, suppliers) => {
-  console.log(`=== Processing Order ===`);
-  console.log(`Service Type: ${order.serviceType}`);
-  console.log(`Order Amount: ${order.amount}`);
-  console.log(`Additional Info Text: ${order.additionalInfoText}`);
+  console.log(=== Processing Order ===);
+  console.log(Service Type: ${order.serviceType});
+  console.log(Order Amount: ${order.amount});
+  console.log(Additional Info Text: ${order.additionalInfoText});
 
   const parsedInfo = parseAdditionalInfo(order.additionalInfoText);
-  console.log(`Parsed Additional Info:`, parsedInfo);
+  console.log(Parsed Additional Info:, parsedInfo);
 
   const matchingSuppliers = [];
 
   for (const supplier of suppliers) {
-    console.log(`Checking Supplier: ${supplier.name}`);
+    console.log(Checking Supplier: ${supplier.name});
     if (checkSupplierMatch(order, supplier)) {
-      console.log(`✅ Supplier ${supplier.name} matched!`);
+      console.log(✅ Supplier ${supplier.name} matched!);
       matchingSuppliers.push(supplier);
     } else {
-      console.log(`❌ Supplier ${supplier.name} did not match.`);
+      console.log(❌ Supplier ${supplier.name} did not match.);
     }
   }
 
@@ -102,19 +97,19 @@ const orders = [
   {
     serviceType: 'Alipay Transfer',
     amount: 7696.7,
-    additionalInfoText: `Ref: 887593
+    additionalInfoText: Ref: 887593
                     Mark: 1596BST
                     English Account: Yes
-                    Chinese Account: No`,
+                    Chinese Account: No,
   },
   {
     serviceType: 'Bank Transfer (Express)',
     amount: 235.72,
-    additionalInfoText: `Ref: 737976
+    additionalInfoText: Ref: 737976
                     Mark: 2487EEE
                     English Account: Yes
                     工商银行 Account: No
-                    农业银行 Account: Yes`,
+                    农业银行 Account: Yes,
   },
   // Add more orders as needed
 ];
