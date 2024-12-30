@@ -26,6 +26,34 @@ const parseAdditionalInfo = (additionalInfoText) => {
   return parsedInfo;
 };
 
+// Function to calculate the total cost for a supplier based on daily rate and service charges
+const calculateTotalCost = (order, supplier) => {
+  let totalCost = 0;
+
+  // Find the matching service
+  const service = supplier.services.find(
+    (s) => normalizeServiceType(s.serviceType) === normalizeServiceType(order.serviceType)
+  );
+
+  if (service) {
+    // Add daily rate (if available)
+    if (service.dailyRate) {
+      totalCost += service.dailyRate;
+    }
+
+    // Add service charges (if applicable)
+    if (service.serviceCharges) {
+      for (const charge of service.serviceCharges) {
+        if (eval(`order.amount ${charge.condition}`)) { // Evaluate the condition (e.g., "< 10000")
+          totalCost += parseFloat(charge.charge.replace(/[^0-9.]/g, '')); // Extract numeric value from charge
+        }
+      }
+    }
+  }
+
+  return totalCost;
+};
+
 // Function to check if a supplier matches the order
 const checkSupplierMatch = (order, supplier) => {
   const orderInfo = parseAdditionalInfo(order.additionalInfoText);
@@ -47,7 +75,7 @@ const checkSupplierMatch = (order, supplier) => {
   return false; // No match found
 };
 
-// Function to process a single order and find matching suppliers
+// Function to process a single order and find the best supplier
 const processOrder = (order, suppliers) => {
   console.log(`=== Processing Order ===`);
   console.log(`Service Type: ${order.serviceType}`);
@@ -62,14 +90,24 @@ const processOrder = (order, suppliers) => {
   for (const supplier of suppliers) {
     console.log(`Checking Supplier: ${supplier.name}`);
     if (checkSupplierMatch(order, supplier)) {
-      console.log(`✅ Supplier ${supplier.name} matched!`);
-      matchingSuppliers.push(supplier);
+      const totalCost = calculateTotalCost(order, supplier);
+      console.log(`✅ Supplier ${supplier.name} matched! Total Cost: ${totalCost}`);
+      matchingSuppliers.push({ supplier, totalCost });
     } else {
       console.log(`❌ Supplier ${supplier.name} did not match.`);
     }
   }
 
-  return matchingSuppliers;
+  // Find the best supplier (lowest total cost)
+  if (matchingSuppliers.length > 0) {
+    const bestSupplier = matchingSuppliers.reduce((prev, curr) =>
+      curr.totalCost < prev.totalCost ? curr : prev
+    );
+    console.log(`Best Supplier: ${bestSupplier.supplier.name} with Total Cost: ${bestSupplier.totalCost}`);
+    return bestSupplier;
+  }
+
+  return null; // No matching suppliers found
 };
 
 // Main calculation function to process all orders
@@ -81,10 +119,10 @@ const calculate = (orders, suppliers) => {
   const results = [];
 
   for (const order of orders) {
-    const matchingSuppliers = processOrder(order, suppliers);
+    const bestSupplier = processOrder(order, suppliers);
     results.push({
       order,
-      matchingSuppliers,
+      bestSupplier,
     });
   }
 
