@@ -12,19 +12,9 @@ document.addEventListener('DOMContentLoaded', function () {
             additionalInfo: row.cells[2].textContent.trim()
         })));
 
-        // Debug daily rates
-        const dailyRates = {};
-        suppliers.forEach(supplier => {
-            supplier.services.forEach(service => {
-                const rateInput = document.querySelector(
-                    `input[data-supplier="${supplier.name}"][data-service="${service.serviceType}"]`
-                );
-                if (rateInput) {
-                    dailyRates[`${supplier.name}-${service.serviceType}`] = rateInput.value;
-                }
-            });
-        });
-        console.log('Daily Rates:', dailyRates);
+        // Load daily rates from localStorage
+        const savedRates = JSON.parse(localStorage.getItem('dailyRates')) || {};
+        console.log('Saved Daily Rates:', savedRates);
 
         if (rows.length === 0) {
             showNotification('No orders to process.', 'error');
@@ -78,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log(`- Amount ${orderAmount} outside limits`);
                     return;
                 }
-                console.log('- Amount within limits');
+                console.log('- Amount within limits:', amountLimit.limit);
 
                 // Check additional questions
                 const matchesQuestions = service.additionalQuestions.every(question => {
@@ -96,13 +86,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 console.log('- All questions match');
 
-                // Check daily rate
-                const dailyRate = parseFloat(dailyRates[`${supplier.name}-${service.serviceType}`]);
+                // Get daily rate from localStorage using the correct key format
+                const rateKey = `${supplier.name}-${service.serviceType}-${amountLimit.limit}`;
+                const dailyRate = parseFloat(savedRates[rateKey]);
+                
+                console.log('- Checking daily rate for key:', rateKey);
+                console.log('- Daily rate found:', dailyRate);
+
                 if (!dailyRate || dailyRate <= 0) {
                     console.log('- Invalid daily rate');
                     return;
                 }
-                console.log('- Valid daily rate:', dailyRate);
 
                 // Calculate total cost
                 const serviceCharge = calculateServiceCharge(orderAmount, service.serviceCharges);
