@@ -9,6 +9,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const suppliers = window.suppliersState;
 
+    // Function to show notifications
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.right = '20px';
+        notification.style.padding = '10px 20px';
+        notification.style.borderRadius = '4px';
+        notification.style.color = '#fff';
+        notification.style.backgroundColor = type === 'success' ? '#28a745' : '#dc3545';
+        notification.style.zIndex = '1000';
+        notification.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+        document.body.appendChild(notification);
+
+        // Remove the notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
     // Function to load rates from localStorage
     function loadRatesFromLocalStorage() {
         console.log('Loading rates from localStorage'); // Debugging log
@@ -203,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const rateInputs = document.querySelectorAll('#daily-rate-section input');
         if (!rateInputs || rateInputs.length === 0) {
             console.warn('No daily rates to save.');
+            showNotification('No changes to save', 'error');
             return;
         }
 
@@ -240,6 +262,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error saving daily rates:', error);
                 showNotification('Failed to save daily rates', 'error');
             }
+        } else {
+            showNotification('No changes to save', 'error');
         }
     }
 
