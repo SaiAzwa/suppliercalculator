@@ -1,8 +1,23 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Fields to ignore during additional information matching
+    const FIELDS_TO_IGNORE = ['reference number', 'marking number'];
+
     // Normalize strings by removing special characters, spaces, and converting to lowercase
     function normalizeString(str) {
         if (!str || typeof str !== 'string') return '';
         return str.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    }
+
+    // Filter out ignored fields from additional information
+    function filterAdditionalInfo(additionalInfo) {
+        const filteredInfo = {};
+        for (const key in additionalInfo) {
+            const normalizedKey = normalizeString(key);
+            if (!FIELDS_TO_IGNORE.includes(normalizedKey)) {
+                filteredInfo[normalizedKey] = additionalInfo[key];
+            }
+        }
+        return filteredInfo;
     }
 
     // Check if the amount falls within the specified limit
@@ -85,9 +100,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         console.log('✓ Amount limit matched:', amountLimit.limit);
 
+        // Filter out ignored fields from additional info
+        const filteredOrderInfo = filterAdditionalInfo(order.additionalInfo);
+
         // Check additional questions
         const additionalQuestionsMatch = serviceMatch.additionalQuestions.every(q => {
-            const orderValue = order.additionalInfo[normalizeString(q.label)];
+            const normalizedLabel = normalizeString(q.label);
+            if (FIELDS_TO_IGNORE.includes(normalizedLabel)) {
+                console.log(`Ignoring question: ${q.label}`);
+                return true; // Skip this question
+            }
+
+            const orderValue = filteredOrderInfo[normalizedLabel];
             console.log(`Question: ${q.label}`);
             console.log(`Expected: ${q.value}`);
             console.log(`Got: ${orderValue}`);
