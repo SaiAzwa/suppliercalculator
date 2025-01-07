@@ -210,9 +210,26 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
     const suppliers = window.suppliersState.data;
     const savedRates = JSON.parse(localStorage.getItem('dailyRates') || '{}');
 
+    if (!suppliers || suppliers.length === 0) {
+        showNotification('No suppliers available. Please add suppliers.', 'error');
+        return;
+    }
+
+    if (Object.keys(savedRates).length === 0) {
+        showNotification('No daily rates available. Please add daily rates.', 'error');
+        return;
+    }
+
+    if (rows.length === 0) {
+        showNotification('No orders to process.', 'error');
+        return;
+    }
+
     console.log('=== Starting Calculation ===');
     console.log('Available Suppliers:', suppliers);
     console.log('Saved Daily Rates:', savedRates);
+
+
 
     if (rows.length === 0) {
         showNotification('No orders to process.', 'error');
@@ -307,4 +324,5 @@ document.getElementById('calculateBestSupplierBtn').addEventListener('click', fu
     } else {
         showNotification(`Found matching suppliers for ${totalMatchesFound} order(s).`, 'success');
     }
+    
 });
