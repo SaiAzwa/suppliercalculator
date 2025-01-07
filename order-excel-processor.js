@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     window.sharedUtils.showNotification(`Successfully processed ${orders.length} orders`, 'success');
+                    document.getElementById('order-excel').value = '';
                 } else {
                     window.sharedUtils.showNotification('No valid orders found in Excel file', 'error');
                 }
@@ -35,30 +36,92 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function processExcelFile(file) {
-        // Use a library like SheetJS (xlsx) to parse the Excel file
+        // Ensure XLSX is loaded
+        if (typeof XLSX === 'undefined') {
+            throw new Error('XLSX library is not loaded.');
+        }
+
         const reader = new FileReader();
         return new Promise((resolve, reject) => {
             reader.onload = function (e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const orders = XLSX.utils.sheet_to_json(worksheet);
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    let orders = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-                // Map Excel data to order structure
-                const processedOrders = orders.map(row => ({
-                    serviceType: row['Service Type'],
-                    orderAmount: row['Order Amount'],
-                    referenceNumber: row['Reference Number'],
-                    markingNumber: row['Marking Number'],
-                    additionalQuestions: [], // Add if needed
-                    requiresAdditionalQuestions: false
-                }));
+                    // Normalize column headers: trim and convert to lowercase
+                    const normalizedOrders = orders.map(row => {
+                        const normalizedRow = {};
+                        Object.keys(row).forEach(key => {
+                            const normalizedKey = key.trim().toLowerCase();
+                            normalizedRow[normalizedKey] = row[key];
+                        });
+                        return normalizedRow;
+                    });
 
-                resolve(processedOrders);
+                    console.log('Normalized Orders:', normalizedOrders); // Debugging
+
+                    // Map Excel data to order structure
+                    const processedOrders = normalizedOrders.map(row => ({
+                        serviceType: row['service type']?.toString().trim(),
+                        orderAmount: parseOrderAmount(row['order amount']),
+                        referenceNumber: row['reference number']?.toString().trim(),
+                        markingNumber: row['marking number']?.toString().trim(),
+                        additionalQuestions: [], // Add if needed
+                        requiresAdditionalQuestions: false
+                    })).filter(order => isValidOrder(order));
+
+                    console.log('Processed Orders:', processedOrders); // Debugging
+
+                    resolve(processedOrders);
+                } catch (error) {
+                    console.error('Error parsing Excel file:', error);
+                    reject(error);
+                }
             };
-            reader.onerror = reject;
+            reader.onerror = function (error) {
+                console.error('FileReader error:', error);
+                reject(error);
+            };
             reader.readAsArrayBuffer(file);
         });
+    }
+
+    function parseOrderAmount(amountStr) {
+        if (typeof amountStr !== 'string') return 0;
+        // Remove currency prefix and commas
+        const cleanedStr = amountStr.replace(/[A-Za-z\s,]/g, '');
+        const amount = parseFloat(cleanedStr);
+        return isNaN(amount) ? 0 : amount;
+    }
+
+    function isValidOrder(order) {
+        const errors = [];
+
+        if (!order.serviceType) {
+            errors.push('Service Type is missing.');
+        }
+
+        if (!order.orderAmount || order.orderAmount <= 0) {
+            errors.push('Order Amount is invalid.');
+        }
+
+        if (!order.referenceNumber) {
+            errors.push('Reference Number is missing.');
+        }
+
+        if (!order.markingNumber) {
+            errors.push('Marking Number is missing.');
+        }
+
+        if (errors.length > 0) {
+            console.error('Invalid order:', order, 'Errors:', errors);
+            return false;
+        }
+
+        // Additional validation if needed
+        return true;
     }
 });
