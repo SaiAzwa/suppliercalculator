@@ -137,16 +137,19 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateOrderTable(orders) {
         const orderTable = document.getElementById('orderTable')?.querySelector('tbody');
         if (!orderTable) return;
-
+    
         orderTable.innerHTML = '';
         orders.forEach((order, index) => {
+            // Safeguard against undefined orderAmount
+            const orderAmount = (typeof order.orderAmount === 'number') ? order.orderAmount.toFixed(2) : '0.00';
+    
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
-                <td>${order.serviceType}</td>
-                <td>${order.orderAmount.toFixed(2)} CNY</td>
+                <td>${order.serviceType || 'N/A'}</td>
+                <td>${orderAmount} CNY</td>
                 <td>
-                    Ref: ${order.referenceNumber}<br>
-                    Mark: ${order.markingNumber}<br>
+                    Ref: ${order.referenceNumber || 'N/A'}<br>
+                    Mark: ${order.markingNumber || 'N/A'}<br>
                     ${order.additionalQuestions.map(q => `${q.label}: ${q.value}`).join('<br>')}
                 </td>
                 <td class="best-supplier">Calculating...</td>
@@ -159,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
             orderTable.appendChild(newRow);
         });
     }
+    
 
     // Function to get additional questions based on the service type
     function getAdditionalQuestionsForService(serviceType) {
