@@ -31,8 +31,8 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log('Parsed orders:', orders);
 
             // Filter out 1688-related orders
-            const filteredOrders = orders.filter(order => 
-                !order.serviceType.includes('1688') && 
+            const filteredOrders = orders.filter(order =>
+                !order.serviceType.includes('1688') &&
                 !order.serviceType.includes('VIP')
             );
 
@@ -47,6 +47,43 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // function parseOrderText(text) {
+    //     const lines = text.split('\n')
+    //         .map(line => line.trim())
+    //         .filter(line => line.length > 0);
+
+    //     return lines.map(line => {
+    //         try {
+    //             // Updated regex to match the specific format
+    //             const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+[\s\w]*)\s+MYR\s+([\d,.]+)\s+([\w\d]+)\s+CNY\s+([\d,.]+)/i;
+    //             const match = line.match(regex);
+
+    //             if (!match) {
+    //                 console.log('Skipping line - invalid format:', line);
+    //                 return null;
+    //             }
+
+    //             const serviceType = extractServiceType(match[3]);
+    //             const requiresAdditionalQuestions = serviceType !== 'Unknown'; // Set flag based on service type
+
+    //             const order = {
+    //                 referenceNumber: match[2],
+    //                 markingNumber: match[5],
+    //                 orderAmount: parseFloat(match[6].replace(',', '')),
+    //                 serviceType: serviceType,
+    //                 accountType: 'Company', // Default to Company
+    //                 additionalQuestions: [], // Initialize as empty
+    //                 requiresAdditionalQuestions: requiresAdditionalQuestions // Flag for additional questions
+    //             };
+
+    //             return isValidOrder(order) ? order : null;
+    //         } catch (error) {
+    //             console.error('Error parsing line:', line, error);
+    //             return null;
+    //         }
+    //     }).filter(order => order !== null);
+    // }
+
     function parseOrderText(text) {
         const lines = text.split('\n')
             .map(line => line.trim())
@@ -54,8 +91,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return lines.map(line => {
             try {
-                // Updated regex to match the specific format
-                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+(\w+[\s\w]*)\s+MYR\s+([\d,.]+)\s+([\w\d]+)\s+CNY\s+([\d,.]+)/i;
+                console.log('Processing line:', line); // Added logging
+                // More flexible regex
+                const regex = /(\d{2}-\w{3}-\d{2})\s+(\d+)\s+([\w\s]+)\s+MYR\s+([\d,.\s]+)\s+([\w\d]+)\s+CNY\s+([\d,.\s]+)/i;
                 const match = line.match(regex);
 
                 if (!match) {
@@ -63,17 +101,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     return null;
                 }
 
-                const serviceType = extractServiceType(match[3]);
-                const requiresAdditionalQuestions = serviceType !== 'Unknown'; // Set flag based on service type
+                const serviceType = extractServiceType(match[3].trim());
+                const requiresAdditionalQuestions = serviceType !== 'Unknown';
 
                 const order = {
                     referenceNumber: match[2],
                     markingNumber: match[5],
-                    orderAmount: parseFloat(match[6].replace(',', '')),
+                    orderAmount: parseFloat(match[6].replace(/[, ]/g, '')),
                     serviceType: serviceType,
-                    accountType: 'Company', // Default to Company
-                    additionalQuestions: [], // Initialize as empty
-                    requiresAdditionalQuestions: requiresAdditionalQuestions // Flag for additional questions
+                    accountType: 'Company',
+                    additionalQuestions: [],
+                    requiresAdditionalQuestions: requiresAdditionalQuestions
                 };
 
                 return isValidOrder(order) ? order : null;
@@ -83,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }).filter(order => order !== null);
     }
+
 
     function extractServiceType(paymentMethod) {
         const serviceTypeMap = {
@@ -182,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Define UI Helper functions
-    showLoadingIndicator = function(message) {
+    showLoadingIndicator = function (message) {
         const loadingIndicator = document.getElementById('loading-indicator');
         if (loadingIndicator) {
             loadingIndicator.style.display = 'flex';
@@ -190,14 +229,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    hideLoadingIndicator = function() {
+    hideLoadingIndicator = function () {
         const loadingIndicator = document.getElementById('loading-indicator');
         if (loadingIndicator) {
             loadingIndicator.style.display = 'none';
         }
     };
 
-    updateLoadingText = function(progress) {
+    updateLoadingText = function (progress) {
         const loadingText = document.querySelector('.loading-text');
         if (loadingText) {
             if (progress.status === 'loading') {
@@ -209,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // Define process file function
-    processFile = async function(file) {
+    processFile = async function (file) {
         window.sharedUtils.showNotification('Processing image...', 'info');
         const orders = await processOrderImage(file);
 
@@ -224,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ...window.orderProcessor.processedOrders,
                 ...orders
             ];
-            
+
             // Notify the table manager about new orders
             if (window.orderProcessor.onOrdersProcessed) {
                 window.orderProcessor.onOrdersProcessed(window.orderProcessor.processedOrders);
