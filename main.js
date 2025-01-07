@@ -54,19 +54,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Handle Calculate Best Supplier Button
-    document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
-        if (window.orderProcessor.processedOrders.length === 0) {
-            window.sharedUtils.showNotification('No orders to calculate', 'error');
-            return;
-        }
+    // document.getElementById('calculateBestSupplierBtn').addEventListener('click', function () {
+    //     if (window.orderProcessor.processedOrders.length === 0) {
+    //         window.sharedUtils.showNotification('No orders to calculate', 'error');
+    //         return;
+    //     }
 
-        // Call the function to calculate the best supplier
-        calculateBestSupplier(window.orderProcessor.processedOrders);
-    });
+    //     // Call the function to calculate the best supplier
+    //     calculateBestSupplier(window.orderProcessor.processedOrders);
+    // });
 
-    // Function to calculate the best supplier (placeholder)
-    function calculateBestSupplier(orders) {
-        // Add your logic to calculate the best supplier here
-        window.sharedUtils.showNotification('Best supplier calculated', 'success');
-    }
+    // // Function to calculate the best supplier (placeholder)
+    // function calculateBestSupplier(orders) {
+    //     // Add your logic to calculate the best supplier here
+    //     window.sharedUtils.showNotification('Best supplier calculated', 'success');
+    // }
 });
