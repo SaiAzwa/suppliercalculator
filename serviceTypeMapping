@@ -1,0 +1,34 @@
+// Define the service type mapping
+const serviceTypeMapping = {
+    1: "Bank Transfer (Express)",
+    2: "Bank Transfer (Saver)",
+    3: "Enterprise to Enterprise",
+    4: "Bank Transfer (USD)",
+    5: "Alipay Transfer",
+};
+
+// Populate the dropdown dynamically
+const serviceTypeDropdown = document.getElementById('service-type');
+for (const [value, name] of Object.entries(serviceTypeMapping)) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.text = name;
+    serviceTypeDropdown.add(option);
+}
+
+// Handle order creation
+document.getElementById('createOrderBtn').addEventListener('click', function () {
+    const selectedValue = document.getElementById('service-type').value;
+    const selectedServiceType = serviceTypeMapping[selectedValue];
+
+    const orderAmount = document.getElementById('orderAmount').value;
+
+    const newOrder = {
+        serviceType: selectedValue, // Numeric value
+        serviceName: selectedServiceType, // Mapped name
+        orderAmount: orderAmount,
+    };
+
+    console.log('New Order:', newOrder);
+    // Add logic to save or process the order
+});
